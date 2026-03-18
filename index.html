@@ -20,113 +20,80 @@
             touch-action: none; 
         }
 
-        /* Анимированный фон */
         #game-container { 
             position: relative; width: 100%; height: 100%; 
             background: radial-gradient(circle at center, #050515 0%, #000 100%);
             overflow: hidden;
         }
 
-        .star { 
-            position: absolute; background: #fff; border-radius: 50%; 
-            animation: moveStars linear infinite;
-        }
-        @keyframes moveStars {
-            from { transform: translateY(0); }
-            to { transform: translateY(100vh); }
-        }
+        .star { position: absolute; background: #fff; border-radius: 50%; animation: moveStars linear infinite; }
+        @keyframes moveStars { from { transform: translateY(0); } to { transform: translateY(100vh); } }
 
-        /* Стили экранов (Меню) */
+        /* Экраны меню */
         .screen { 
             position: absolute; inset: 0; z-index: 100; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             background: radial-gradient(circle, rgba(0,255,255,0.05) 0%, rgba(0,0,0,0.9) 100%);
             backdrop-filter: blur(20px); transition: 0.5s;
         }
-        
         .hidden { opacity: 0; pointer-events: none; transform: scale(1.1); }
 
         #title { 
-            font-size: clamp(2rem, 8vw, 5rem); 
-            font-weight: 900; color: var(--neon-blue); 
-            text-shadow: 0 0 20px var(--neon-blue), 0 0 40px rgba(0,255,255,0.5);
-            margin-bottom: 40px; letter-spacing: 10px;
+            font-size: clamp(2rem, 8vw, 5rem); font-weight: 900; color: var(--neon-blue); 
+            text-shadow: 0 0 20px var(--neon-blue); text-align: center;
             animation: floating 3s ease-in-out infinite;
         }
+        @keyframes floating { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
-        @keyframes floating {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-
-        /* Карточки выбора */
-        .grid { 
-            display: flex; gap: 20px; 
-            flex-wrap: wrap; justify-content: center; width: 90%; 
-        }
-
+        .grid { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; width: 90%; }
         .card { 
-            width: 200px; padding: 30px 20px; 
-            background: var(--glass); 
-            border: 2px solid var(--neon-blue); 
-            border-radius: 20px; cursor: pointer; 
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            text-align: center;
-            box-shadow: 0 0 15px rgba(0,255,255,0.1);
-            position: relative; overflow: hidden;
+            width: 180px; padding: 20px; background: var(--glass); 
+            border: 2px solid var(--neon-blue); border-radius: 20px; cursor: pointer; 
+            transition: 0.3s; text-align: center;
         }
-
-        .card::before {
-            content: ''; position: absolute; top: -50%; left: -50%;
-            width: 200%; height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(0,255,255,0.1), transparent);
-            transform: rotate(45deg); transition: 0.5s;
-        }
-
-        .card:hover { 
-            transform: translateY(-10px) scale(1.05); 
-            background: var(--neon-blue); color: #000;
-            box-shadow: 0 0 50px var(--neon-blue);
-        }
-
-        .card:active { transform: scale(0.95); }
-
-        .card h3 { margin: 0; font-size: 20px; letter-spacing: 2px; }
-        .card p { font-size: 12px; margin-top: 10px; opacity: 0.7; font-family: sans-serif; }
+        .card:hover { transform: scale(1.05); box-shadow: 0 0 30px var(--neon-blue); }
 
         /* Игровые объекты */
-        #player { 
-            position: absolute; width: 60px; height: 60px; z-index: 10; 
-            filter: drop-shadow(0 0 15px var(--neon-blue));
-            transition: transform 0.1s linear;
-        }
+        #player { position: absolute; width: 60px; height: 60px; z-index: 10; filter: drop-shadow(0 0 15px var(--neon-blue)); }
+        .bullet { position: absolute; width: 4px; height: 25px; background: var(--neon-blue); box-shadow: 0 0 20px var(--neon-blue); border-radius: 4px;}
+        .enemy { position: absolute; width: 45px; height: 45px; filter: drop-shadow(0 0 12px var(--neon-pink)); }
 
-        .bullet { 
-            position: absolute; width: 4px; height: 25px; 
-            background: var(--neon-blue); border-radius: 4px;
+        /* ИНТЕРФЕЙС УПРАВЛЕНИЯ */
+        #controls { position: absolute; inset: 0; pointer-events: none; z-index: 60; display: none; }
+        
+        /* Стили Джойстика */
+        .joy-base { 
+            position: absolute; bottom: 50px; left: 50px; 
+            width: 120px; height: 120px; background: var(--glass);
+            border: 2px solid var(--neon-blue); border-radius: 50%;
+            pointer-events: auto; touch-action: none;
+        }
+        .joy-stick {
+            position: absolute; top: 50%; left: 50%;
+            width: 50px; height: 50px; background: var(--neon-blue);
+            border-radius: 50%; transform: translate(-50%, -50%);
             box-shadow: 0 0 20px var(--neon-blue);
         }
 
-        .enemy { 
-            position: absolute; width: 45px; height: 45px; 
-            filter: drop-shadow(0 0 12px var(--neon-pink));
+        /* Кнопка Огня */
+        #fire-btn {
+            position: absolute; bottom: 60px; right: 60px;
+            width: 100px; height: 100px; background: rgba(255, 0, 102, 0.2);
+            border: 3px solid var(--neon-pink); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 900; color: var(--neon-pink); pointer-events: auto;
+            backdrop-filter: blur(5px); box-shadow: 0 0 20px rgba(255,0,102,0.2);
         }
+        #fire-btn:active { transform: scale(0.9); background: var(--neon-pink); color: #000; }
 
-        /* HUD */
         #hud { 
             position: absolute; top: 20px; left: 20px; z-index: 50; 
-            background: rgba(0,0,0,0.5); padding: 15px;
-            border-radius: 15px; border-left: 4px solid var(--neon-blue);
-            backdrop-filter: blur(5px);
+            background: rgba(0,0,0,0.5); padding: 15px; border-radius: 15px; border-left: 4px solid var(--neon-blue);
         }
+        .bar { width: 150px; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; margin: 5px 0; overflow: hidden; }
+        #hp-fill { height: 100%; background: var(--neon-blue); width: 100%; transition: 0.2s; }
 
-        .bar { width: 180px; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; margin: 8px 0; overflow: hidden; }
-        #hp-fill { height: 100%; background: linear-gradient(90deg, #0af, var(--neon-blue)); width: 100%; transition: 0.3s; }
-
-        /* Зоны тача */
-        .touch-zone { position: absolute; top: 0; width: 50%; height: 100%; z-index: 20; }
-        #touch-left { left: 0; }
-        #touch-right { right: 0; }
+        @keyframes shake { 0%, 100% { transform:translate(0,0); } 25% { transform:translate(5px,5px); } 75% { transform:translate(-5px,-5px); } }
     </style>
 </head>
 <body>
@@ -135,148 +102,143 @@
         <div id="stars-container"></div>
 
         <div id="hud">
-            <div style="font-size: 10px; opacity: 0.6;">ENERGY SHIELD</div>
+            <div style="font-size: 10px;">SHIELD</div>
             <div class="bar"><div id="hp-fill"></div></div>
-            <div style="letter-spacing: 2px;">SCORE: <span id="sc" style="color:var(--neon-blue)">0</span></div>
+            <div>SCORE: <span id="sc" style="color:var(--neon-blue)">0</span></div>
         </div>
 
-        <div id="touch-left" class="touch-zone"></div>
-        <div id="touch-right" class="touch-zone"></div>
+        <div id="controls">
+            <div class="joy-base" id="joy-base">
+                <div class="joy-stick" id="joy-stick"></div>
+            </div>
+            <div id="fire-btn">FIRE</div>
+        </div>
 
         <div id="m-screen" class="screen">
             <div id="title">ULTRA<br>DEFENSE</div>
             <div class="grid">
-                <div class="card" onclick="init(1.5, 0.08, 500)">
-                    <h3>NEBULA</h3>
-                    <p>EASY • 500 HP</p>
-                </div>
-                <div class="card" onclick="init(3.5, 0.06, 300)">
-                    <h3>VOID</h3>
-                    <p>NORMAL • 300 HP</p>
-                </div>
-                <div class="card" onclick="init(7, 0.18, 150)">
-                    <h3>NOVA</h3>
-                    <p>HARDCORE • 150 HP</p>
-                </div>
+                <div class="card" onclick="init(2, 0.05, 500)"><h3>NEBULA</h3><p>EASY</p></div>
+                <div class="card" onclick="init(4, 0.08, 300)"><h3>VOID</h3><p>NORMAL</p></div>
+                <div class="card" onclick="init(8, 0.15, 150)"><h3>NOVA</h3><p>HARD</p></div>
             </div>
         </div>
 
         <div id="u-screen" class="screen hidden">
-            <div id="title" style="font-size: 30px;">LEVEL UP</div>
+            <h2 id="title" style="font-size: 30px;">UPGRADE</h2>
             <div id="u-grid" class="grid"></div>
         </div>
 
         <div id="player" style="display:none">
             <svg viewBox="0 0 50 50">
-                <defs>
-                    <linearGradient id="grad" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" style="stop-color:#0ff;stop-opacity:1" />
-                        <stop offset="100%" style="stop-color:#0066ff;stop-opacity:1" />
-                    </linearGradient>
-                </defs>
-                <path d="M25 5 L45 40 L25 32 L5 40 Z" fill="url(#grad)" stroke="#0ff" stroke-width="2"/>
-                <path d="M25 10 L35 35 L25 30 L15 35 Z" fill="rgba(0,255,255,0.3)"/>
+                <path d="M25 5 L45 40 L25 32 L5 40 Z" fill="#0ff" stroke="#fff" stroke-width="1"/>
             </svg>
         </div>
     </div>
 
     <script>
         const cont = document.getElementById('game-container');
+        const player = document.getElementById('player');
+        const joyBase = document.getElementById('joy-base');
+        const joyStick = document.getElementById('joy-stick');
+        const fireBtn = document.getElementById('fire-btn');
+
+        let g = { 
+            active: false, sc: 0, kl: 0, hp: 100, mH: 100, fr: 300, 
+            ms: 1, spd: 1, spawn: 0.05, mult: 1, pSpd: 8, firing: false 
+        };
         
-        // Создание звезд
-        function createStars() {
-            const container = document.getElementById('stars-container');
-            for(let i=0; i<150; i++) {
-                const star = document.createElement('div');
-                star.className = 'star';
-                const size = Math.random() * 3;
-                star.style.width = star.style.height = size + 'px';
-                star.style.left = Math.random() * 100 + '%';
-                star.style.top = Math.random() * 100 + '%';
-                star.style.animationDuration = (Math.random() * 3 + 2) + 's';
-                star.style.opacity = Math.random();
-                container.appendChild(star);
-            }
+        let px = window.innerWidth/2, py = window.innerHeight - 100;
+        let bls = [], ens = [], lastF = 0;
+        let keys = {};
+        let joyPos = { x: 0, y: 0 };
+
+        // Звезды
+        for(let i=0; i<100; i++) {
+            const s = document.createElement('div');
+            s.className = 'star';
+            s.style.width = s.style.height = Math.random()*3+'px';
+            s.style.left = Math.random()*100+'%';
+            s.style.top = Math.random()*100+'%';
+            s.style.animationDuration = Math.random()*3+2+'s';
+            document.getElementById('stars-container').appendChild(s);
         }
-        createStars();
 
-        const pool = [
-            {n:"RAPID FIRE", d:"Скорость атаки +30%", f:()=>g.fr=Math.max(70, g.fr-80)},
-            {n:"TWIN CANNON", d:"Дополнительный ствол", f:()=>g.ms++},
-            {n:"REPAIR", d:"Восстановить 200 HP", f:()=>g.hp=Math.min(g.mH, g.hp+200)},
-            {n:"PLASMA", d:"Урон и очки x2", f:()=>g.mult+=1},
-            {n:"OVERDRIVE", d:"Скорость корабля +50%", f:()=>g.pSpd += 5}
-        ];
+        // Управление клавиатурой (WASD)
+        window.onkeydown = (e) => keys[e.code] = true;
+        window.onkeyup = (e) => keys[e.code] = false;
+        window.onmousedown = () => { if(g.active) g.firing = true; };
+        window.onmouseup = () => g.firing = false;
 
-        let g = { active: false, sc: 0, kl: 0, hp: 500, mH: 500, fr: 450, ms: 1, spd: 1, spawn: 0.05, mult: 1, pSpd: 12 };
-        let px = window.innerWidth/2, bls = [], ens = [], lastF = 0, move = 0;
+        // Мобильный джойстик
+        joyBase.ontouchstart = (e) => { joyPos.active = true; };
+        window.ontouchmove = (e) => {
+            if(!joyPos.active) return;
+            let touch = e.touches[0];
+            let rect = joyBase.getBoundingClientRect();
+            let centerX = rect.left + rect.width/2;
+            let centerY = rect.top + rect.height/2;
+            let dx = touch.clientX - centerX;
+            let dy = touch.clientY - centerY;
+            let dist = Math.min(60, Math.sqrt(dx*dx + dy*dy));
+            let angle = Math.atan2(dy, dx);
+            joyPos.x = Math.cos(angle) * (dist/60);
+            joyPos.y = Math.sin(angle) * (dist/60);
+            joyStick.style.transform = `translate(calc(-50% + ${Math.cos(angle)*dist}px), calc(-50% + ${Math.sin(angle)*dist}px))`;
+        };
+        window.ontouchend = () => {
+            joyPos.active = false; joyPos.x = 0; joyPos.y = 0;
+            joyStick.style.transform = `translate(-50%, -50%)`;
+        };
 
-        // Управление
-        window.addEventListener('keydown', e => { 
-            if(e.code==='KeyA' || e.code==='ArrowLeft') move = -1; 
-            if(e.code==='KeyD' || e.code==='ArrowRight') move = 1; 
-        });
-        window.addEventListener('keyup', () => move = 0);
-        
-        document.getElementById('touch-left').ontouchstart = (e) => { e.preventDefault(); move = -1; };
-        document.getElementById('touch-right').ontouchstart = (e) => { e.preventDefault(); move = 1; };
-        document.getElementById('touch-left').ontouchend = document.getElementById('touch-right').ontouchend = () => move = 0;
+        fireBtn.ontouchstart = (e) => { e.preventDefault(); g.firing = true; };
+        fireBtn.ontouchend = () => g.firing = false;
 
         function init(s, sw, hp) {
             g.spd = s; g.spawn = sw; g.hp = g.mH = hp;
-            g.sc = 0; g.kl = 0;
             document.getElementById('m-screen').classList.add('hidden');
-            document.getElementById('player').style.display = 'block';
+            document.getElementById('controls').style.display = 'block';
+            player.style.display = 'block';
             g.active = true;
             requestAnimationFrame(loop);
         }
 
-        function showUpgrades() {
-            g.active = false;
-            const ugrid = document.getElementById('u-grid');
-            ugrid.innerHTML = '';
-            pool.sort(()=>Math.random()-0.5).slice(0,3).forEach(u => {
-                const d = document.createElement('div');
-                d.className = 'card';
-                d.innerHTML = `<h3>${u.n}</h3><p>${u.d}</p>`;
-                d.onclick = () => { 
-                    u.f(); 
-                    document.getElementById('u-screen').classList.add('hidden'); 
-                    g.active=true; 
-                    requestAnimationFrame(loop); 
-                };
-                ugrid.appendChild(d);
-            });
-            document.getElementById('u-screen').classList.remove('hidden');
+        function spawnBullet() {
+            for(let i=0; i<g.ms; i++) {
+                const b = document.createElement('div');
+                b.className = 'bullet';
+                b.x = px + 28 + (i-(g.ms-1)/2)*15;
+                b.y = py;
+                cont.appendChild(b); bls.push(b);
+            }
         }
 
         function loop() {
             if(!g.active) return;
-            
-            // Плавное движение корабля
-            px += move * g.pSpd;
-            if(px < 0) px = 0; 
-            if(px > window.innerWidth-60) px = window.innerWidth-60;
-            
-            const p = document.getElementById('player');
-            p.style.transform = `translate(${px}px, ${window.innerHeight - 120}px) rotate(${move * 15}deg)`;
 
-            // Стрельба
-            let now = Date.now();
-            if(now - lastF > g.fr) {
-                for(let i=0; i<g.ms; i++) {
-                    const b = document.createElement('div');
-                    b.className = 'bullet';
-                    b.x = px + 28 + (i-(g.ms-1)/2)*20; 
-                    b.y = window.innerHeight-130;
-                    cont.appendChild(b); bls.push(b);
-                }
-                lastF = now;
+            // Движение ПК (WASD)
+            if(keys['KeyA'] || keys['ArrowLeft']) px -= g.pSpd;
+            if(keys['KeyD'] || keys['ArrowRight']) px += g.pSpd;
+            if(keys['KeyW'] || keys['ArrowUp']) py -= g.pSpd;
+            if(keys['KeyS'] || keys['ArrowDown']) py += g.pSpd;
+
+            // Движение Джойстик
+            px += joyPos.x * g.pSpd;
+            py += joyPos.y * g.pSpd;
+
+            // Границы
+            px = Math.max(0, Math.min(window.innerWidth-60, px));
+            py = Math.max(0, Math.min(window.innerHeight-60, py));
+            
+            player.style.transform = `translate(${px}px, ${py}px)`;
+
+            // Огонь
+            if(g.firing && Date.now() - lastF > g.fr) {
+                spawnBullet(); lastF = Date.now();
             }
 
             // Пули
             bls.forEach((b, i) => {
-                b.y -= 15; 
+                b.y -= 12;
                 b.style.transform = `translate(${b.x}px, ${b.y}px)`;
                 if(b.y < -50) { b.remove(); bls.splice(i, 1); }
             });
@@ -285,53 +247,57 @@
             if(Math.random() < g.spawn) {
                 const e = document.createElement('div');
                 e.className = 'enemy';
-                e.innerHTML = `<svg viewBox="0 0 50 50"><path d="M10 5 L25 45 L40 5 Z" fill="none" stroke="#f06" stroke-width="3"/><path d="M15 10 L25 35 L35 10 Z" fill="rgba(255,0,102,0.2)"/></svg>`;
+                e.innerHTML = `<svg viewBox="0 0 50 50"><path d="M10 5 L25 45 L40 5 Z" fill="none" stroke="#f06" stroke-width="3"/></svg>`;
                 e.x = Math.random()*(window.innerWidth-50); e.y = -60;
                 cont.appendChild(e); ens.push(e);
             }
 
             ens.forEach((e, i) => {
-                e.y += g.spd; 
+                e.y += g.spd;
                 e.style.transform = `translate(${e.x}px, ${e.y}px)`;
                 
-                // Коллизия
+                // Коллизия с пулей
                 bls.forEach((b, bi) => {
                     if(Math.abs(b.x - e.x - 25) < 30 && Math.abs(b.y - e.y - 25) < 30) {
-                        e.remove(); ens.splice(i,1); 
-                        b.remove(); bls.splice(bi,1);
-                        g.sc += 10 * g.mult; g.kl++;
+                        e.remove(); ens.splice(i,1); b.remove(); bls.splice(bi,1);
+                        g.sc += 10; g.kl++;
                         document.getElementById('sc').innerText = g.sc;
-                        if(g.kl % 7 === 0) showUpgrades();
+                        if(g.kl % 10 === 0) upgrade();
                     }
                 });
 
-                if(e.y > window.innerHeight) { 
-                    e.remove(); ens.splice(i,1); 
-                    g.hp -= 25; 
-                    // Эффект тряски экрана при уроне
+                // Пролет врага или столкновение
+                if(e.y > window.innerHeight || (Math.abs(px - e.x) < 40 && Math.abs(py - e.y) < 40)) {
+                    e.remove(); ens.splice(i,1);
+                    g.hp -= 20;
                     cont.style.animation = 'shake 0.2s';
                     setTimeout(()=>cont.style.animation='', 200);
                 }
             });
 
             document.getElementById('hp-fill').style.width = (g.hp/g.mH)*100+'%';
-            if(g.hp <= 0) { 
-                alert("MISSION FAILED! SCORE: " + g.sc); 
-                location.reload(); 
-            }
+            if(g.hp <= 0) { alert("GAME OVER! SCORE: " + g.sc); location.reload(); }
             
             requestAnimationFrame(loop);
         }
-    </script>
-    
-    <style>
-        @keyframes shake {
-            0% { transform: translate(0,0); }
-            25% { transform: translate(5px,5px); }
-            50% { transform: translate(-5px,0); }
-            75% { transform: translate(5px,-5px); }
-            100% { transform: translate(0,0); }
+
+        function upgrade() {
+            g.active = false;
+            const ugrid = document.getElementById('u-grid');
+            ugrid.innerHTML = '';
+            const opts = [
+                {n:"SPEED", f:()=>g.pSpd+=3},
+                {n:"POWER", f:()=>g.fr=Math.max(100, g.fr-50)},
+                {n:"MULTI", f:()=>g.ms++}
+            ];
+            opts.forEach(o => {
+                const d = document.createElement('div');
+                d.className = 'card'; d.innerHTML = `<h3>${o.n}</h3>`;
+                d.onclick = () => { o.f(); document.getElementById('u-screen').classList.add('hidden'); g.active=true; requestAnimationFrame(loop); };
+                ugrid.appendChild(d);
+            });
+            document.getElementById('u-screen').classList.remove('hidden');
         }
-    </style>
+    </script>
 </body>
 </html>
