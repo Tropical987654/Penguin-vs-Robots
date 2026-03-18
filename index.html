@@ -27,7 +27,7 @@
         }
 
         .star { position: absolute; background: #fff; border-radius: 50%; animation: moveStars linear infinite; }
-        @keyframes moveStars { from { transform: translateY(0); } to { transform: translateY(100vh); } }
+        @keyframes moveStars { from { transform: translateY(-100px); } to { transform: translateY(110vh); } }
 
         /* Экраны меню */
         .screen { 
@@ -54,35 +54,34 @@
         .card:hover { transform: scale(1.05); box-shadow: 0 0 30px var(--neon-blue); }
 
         /* Игровые объекты */
-        #player { position: absolute; width: 60px; height: 60px; z-index: 10; filter: drop-shadow(0 0 15px var(--neon-blue)); }
+        #player { position: absolute; width: 50px; height: 50px; z-index: 10; filter: drop-shadow(0 0 15px var(--neon-blue)); will-change: transform; }
         .bullet { position: absolute; width: 4px; height: 25px; background: var(--neon-blue); box-shadow: 0 0 20px var(--neon-blue); border-radius: 4px;}
-        .enemy { position: absolute; width: 45px; height: 45px; filter: drop-shadow(0 0 12px var(--neon-pink)); }
+        .enemy { position: absolute; width: 40px; height: 40px; filter: drop-shadow(0 0 12px var(--neon-pink)); }
 
-        /* ИНТЕРФЕЙС УПРАВЛЕНИЯ */
+        /* Интерфейс управления */
         #controls { position: absolute; inset: 0; pointer-events: none; z-index: 60; display: none; }
         
-        /* Стили Джойстика */
         .joy-base { 
-            position: absolute; bottom: 50px; left: 50px; 
-            width: 120px; height: 120px; background: var(--glass);
+            position: absolute; bottom: 40px; left: 40px; 
+            width: 100px; height: 100px; background: var(--glass);
             border: 2px solid var(--neon-blue); border-radius: 50%;
             pointer-events: auto; touch-action: none;
         }
         .joy-stick {
             position: absolute; top: 50%; left: 50%;
-            width: 50px; height: 50px; background: var(--neon-blue);
+            width: 40px; height: 40px; background: var(--neon-blue);
             border-radius: 50%; transform: translate(-50%, -50%);
             box-shadow: 0 0 20px var(--neon-blue);
         }
 
-        /* Кнопка Огня */
         #fire-btn {
-            position: absolute; bottom: 60px; right: 60px;
-            width: 100px; height: 100px; background: rgba(255, 0, 102, 0.2);
+            position: absolute; bottom: 40px; right: 40px;
+            width: 90px; height: 90px; background: rgba(255, 0, 102, 0.2);
             border: 3px solid var(--neon-pink); border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             font-weight: 900; color: var(--neon-pink); pointer-events: auto;
             backdrop-filter: blur(5px); box-shadow: 0 0 20px rgba(255,0,102,0.2);
+            user-select: none;
         }
         #fire-btn:active { transform: scale(0.9); background: var(--neon-pink); color: #000; }
 
@@ -90,7 +89,7 @@
             position: absolute; top: 20px; left: 20px; z-index: 50; 
             background: rgba(0,0,0,0.5); padding: 15px; border-radius: 15px; border-left: 4px solid var(--neon-blue);
         }
-        .bar { width: 150px; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; margin: 5px 0; overflow: hidden; }
+        .bar { width: 120px; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; margin: 5px 0; overflow: hidden; }
         #hp-fill { height: 100%; background: var(--neon-blue); width: 100%; transition: 0.2s; }
 
         @keyframes shake { 0%, 100% { transform:translate(0,0); } 25% { transform:translate(5px,5px); } 75% { transform:translate(-5px,-5px); } }
@@ -102,29 +101,27 @@
         <div id="stars-container"></div>
 
         <div id="hud">
-            <div style="font-size: 10px;">SHIELD</div>
+            <div style="font-size: 10px; letter-spacing: 1px;">SHIELD</div>
             <div class="bar"><div id="hp-fill"></div></div>
-            <div>SCORE: <span id="sc" style="color:var(--neon-blue)">0</span></div>
+            <div style="font-size: 14px;">SCORE: <span id="sc" style="color:var(--neon-blue)">0</span></div>
         </div>
 
         <div id="controls">
-            <div class="joy-base" id="joy-base">
-                <div class="joy-stick" id="joy-stick"></div>
-            </div>
+            <div class="joy-base" id="joy-base"><div class="joy-stick" id="joy-stick"></div></div>
             <div id="fire-btn">FIRE</div>
         </div>
 
         <div id="m-screen" class="screen">
             <div id="title">ULTRA<br>DEFENSE</div>
             <div class="grid">
-                <div class="card" onclick="init(2, 0.05, 500)"><h3>NEBULA</h3><p>EASY</p></div>
-                <div class="card" onclick="init(4, 0.08, 300)"><h3>VOID</h3><p>NORMAL</p></div>
-                <div class="card" onclick="init(8, 0.15, 150)"><h3>NOVA</h3><p>HARD</p></div>
+                <div class="card" onclick="init(2, 0.02, 500)"><h3>NEBULA</h3><p>EASY START</p></div>
+                <div class="card" onclick="init(4, 0.04, 300)"><h3>VOID</h3><p>NORMAL</p></div>
+                <div class="card" onclick="init(8, 0.06, 150)"><h3>NOVA</h3><p>HARDCORE</p></div>
             </div>
         </div>
 
         <div id="u-screen" class="screen hidden">
-            <h2 id="title" style="font-size: 30px;">UPGRADE</h2>
+            <h2 id="title" style="font-size: 30px;">LEVEL UP</h2>
             <div id="u-grid" class="grid"></div>
         </div>
 
@@ -143,17 +140,17 @@
         const fireBtn = document.getElementById('fire-btn');
 
         let g = { 
-            active: false, sc: 0, kl: 0, hp: 100, mH: 100, fr: 300, 
-            ms: 1, spd: 1, spawn: 0.05, mult: 1, pSpd: 8, firing: false 
+            active: false, sc: 0, kl: 0, hp: 100, mH: 100, fr: 350, 
+            ms: 1, spd: 1, baseSpawn: 0.02, curSpawn: 0.02, mult: 1, pSpd: 8, firing: false 
         };
         
-        let px = window.innerWidth/2, py = window.innerHeight - 100;
+        let px = 0, py = 0; // Позиция будет задана в init
         let bls = [], ens = [], lastF = 0;
         let keys = {};
-        let joyPos = { x: 0, y: 0 };
+        let joyPos = { x: 0, y: 0, active: false };
 
         // Звезды
-        for(let i=0; i<100; i++) {
+        for(let i=0; i<80; i++) {
             const s = document.createElement('div');
             s.className = 'star';
             s.style.width = s.style.height = Math.random()*3+'px';
@@ -163,38 +160,35 @@
             document.getElementById('stars-container').appendChild(s);
         }
 
-        // Управление клавиатурой (WASD)
         window.onkeydown = (e) => keys[e.code] = true;
         window.onkeyup = (e) => keys[e.code] = false;
         window.onmousedown = () => { if(g.active) g.firing = true; };
         window.onmouseup = () => g.firing = false;
 
         // Мобильный джойстик
-        joyBase.ontouchstart = (e) => { joyPos.active = true; };
+        joyBase.ontouchstart = (e) => { e.preventDefault(); joyPos.active = true; };
         window.ontouchmove = (e) => {
             if(!joyPos.active) return;
             let touch = e.touches[0];
             let rect = joyBase.getBoundingClientRect();
-            let centerX = rect.left + rect.width/2;
-            let centerY = rect.top + rect.height/2;
-            let dx = touch.clientX - centerX;
-            let dy = touch.clientY - centerY;
-            let dist = Math.min(60, Math.sqrt(dx*dx + dy*dy));
+            let dx = touch.clientX - (rect.left + rect.width/2);
+            let dy = touch.clientY - (rect.top + rect.height/2);
+            let dist = Math.min(50, Math.sqrt(dx*dx + dy*dy));
             let angle = Math.atan2(dy, dx);
-            joyPos.x = Math.cos(angle) * (dist/60);
-            joyPos.y = Math.sin(angle) * (dist/60);
+            joyPos.x = Math.cos(angle) * (dist/50);
+            joyPos.y = Math.sin(angle) * (dist/50);
             joyStick.style.transform = `translate(calc(-50% + ${Math.cos(angle)*dist}px), calc(-50% + ${Math.sin(angle)*dist}px))`;
         };
-        window.ontouchend = () => {
-            joyPos.active = false; joyPos.x = 0; joyPos.y = 0;
-            joyStick.style.transform = `translate(-50%, -50%)`;
-        };
+        window.ontouchend = () => { joyPos.active = false; joyPos.x = 0; joyPos.y = 0; joyStick.style.transform = `translate(-50%, -50%)`; };
 
         fireBtn.ontouchstart = (e) => { e.preventDefault(); g.firing = true; };
-        fireBtn.ontouchend = () => g.firing = false;
+        fireBtn.ontouchend = (e) => { e.preventDefault(); g.firing = false; };
 
         function init(s, sw, hp) {
-            g.spd = s; g.spawn = sw; g.hp = g.mH = hp;
+            g.spd = s; g.baseSpawn = g.curSpawn = sw; g.hp = g.mH = hp;
+            g.sc = 0; g.kl = 0;
+            px = window.innerWidth / 2 - 25;
+            py = window.innerHeight - 120;
             document.getElementById('m-screen').classList.add('hidden');
             document.getElementById('controls').style.display = 'block';
             player.style.display = 'block';
@@ -202,38 +196,37 @@
             requestAnimationFrame(loop);
         }
 
-        function spawnBullet() {
-            for(let i=0; i<g.ms; i++) {
-                const b = document.createElement('div');
-                b.className = 'bullet';
-                b.x = px + 28 + (i-(g.ms-1)/2)*15;
-                b.y = py;
-                cont.appendChild(b); bls.push(b);
-            }
-        }
-
         function loop() {
             if(!g.active) return;
 
-            // Движение ПК (WASD)
+            // Нарастание сложности (каждые 100 очков +0.5% к шансу врага)
+            g.curSpawn = g.baseSpawn + (Math.floor(g.sc / 100) * 0.005);
+
+            // Движение
             if(keys['KeyA'] || keys['ArrowLeft']) px -= g.pSpd;
             if(keys['KeyD'] || keys['ArrowRight']) px += g.pSpd;
             if(keys['KeyW'] || keys['ArrowUp']) py -= g.pSpd;
             if(keys['KeyS'] || keys['ArrowDown']) py += g.pSpd;
 
-            // Движение Джойстик
             px += joyPos.x * g.pSpd;
             py += joyPos.y * g.pSpd;
 
-            // Границы
-            px = Math.max(0, Math.min(window.innerWidth-60, px));
-            py = Math.max(0, Math.min(window.innerHeight-60, py));
+            // Ограничение границ (с учетом изменения размера окна)
+            px = Math.max(0, Math.min(window.innerWidth - 50, px));
+            py = Math.max(0, Math.min(window.innerHeight - 50, py));
             
             player.style.transform = `translate(${px}px, ${py}px)`;
 
             // Огонь
             if(g.firing && Date.now() - lastF > g.fr) {
-                spawnBullet(); lastF = Date.now();
+                for(let i=0; i<g.ms; i++) {
+                    const b = document.createElement('div');
+                    b.className = 'bullet';
+                    b.x = px + 23 + (i-(g.ms-1)/2)*15;
+                    b.y = py;
+                    cont.appendChild(b); bls.push(b);
+                }
+                lastF = Date.now();
             }
 
             // Пули
@@ -244,11 +237,11 @@
             });
 
             // Враги
-            if(Math.random() < g.spawn) {
+            if(Math.random() < g.curSpawn) {
                 const e = document.createElement('div');
                 e.className = 'enemy';
                 e.innerHTML = `<svg viewBox="0 0 50 50"><path d="M10 5 L25 45 L40 5 Z" fill="none" stroke="#f06" stroke-width="3"/></svg>`;
-                e.x = Math.random()*(window.innerWidth-50); e.y = -60;
+                e.x = Math.random()*(window.innerWidth-40); e.y = -60;
                 cont.appendChild(e); ens.push(e);
             }
 
@@ -256,9 +249,8 @@
                 e.y += g.spd;
                 e.style.transform = `translate(${e.x}px, ${e.y}px)`;
                 
-                // Коллизия с пулей
                 bls.forEach((b, bi) => {
-                    if(Math.abs(b.x - e.x - 25) < 30 && Math.abs(b.y - e.y - 25) < 30) {
+                    if(Math.abs(b.x - e.x - 17) < 30 && Math.abs(b.y - e.y - 17) < 30) {
                         e.remove(); ens.splice(i,1); b.remove(); bls.splice(bi,1);
                         g.sc += 10; g.kl++;
                         document.getElementById('sc').innerText = g.sc;
@@ -266,8 +258,7 @@
                     }
                 });
 
-                // Пролет врага или столкновение
-                if(e.y > window.innerHeight || (Math.abs(px - e.x) < 40 && Math.abs(py - e.y) < 40)) {
+                if(e.y > window.innerHeight || (Math.abs(px - e.x) < 35 && Math.abs(py - e.y) < 35)) {
                     e.remove(); ens.splice(i,1);
                     g.hp -= 20;
                     cont.style.animation = 'shake 0.2s';
@@ -276,7 +267,7 @@
             });
 
             document.getElementById('hp-fill').style.width = (g.hp/g.mH)*100+'%';
-            if(g.hp <= 0) { alert("GAME OVER! SCORE: " + g.sc); location.reload(); }
+            if(g.hp <= 0) { alert("MISSION FAILED! SCORE: " + g.sc); location.reload(); }
             
             requestAnimationFrame(loop);
         }
@@ -286,9 +277,9 @@
             const ugrid = document.getElementById('u-grid');
             ugrid.innerHTML = '';
             const opts = [
-                {n:"SPEED", f:()=>g.pSpd+=3},
-                {n:"POWER", f:()=>g.fr=Math.max(100, g.fr-50)},
-                {n:"MULTI", f:()=>g.ms++}
+                {n:"SPEED", f:()=>g.pSpd+=2},
+                {n:"RELOAD", f:()=>g.fr=Math.max(100, g.fr-50)},
+                {n:"TWIN", f:()=>g.ms++}
             ];
             opts.forEach(o => {
                 const d = document.createElement('div');
@@ -298,6 +289,12 @@
             });
             document.getElementById('u-screen').classList.remove('hidden');
         }
+
+        // Авто-коррекция при повороте экрана
+        window.addEventListener('resize', () => {
+            px = Math.min(px, window.innerWidth - 50);
+            py = Math.min(py, window.innerHeight - 50);
+        });
     </script>
 </body>
 </html>
