@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ASTRO ROYALE</title>
+    <title>ASTRO ROYALE PRO</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap');
 
@@ -11,322 +11,283 @@
             --neon-blue: #0ff;
             --neon-pink: #f06;
             --neon-purple: #a0f;
-            --glass: rgba(10, 10, 30, 0.85);
-            --bg-dark: #050510;
+            --glass: rgba(10, 10, 30, 0.9);
         }
 
         body, html { 
             margin: 0; padding: 0; width: 100%; height: 100%; 
             overflow: hidden; background: #000; 
             font-family: 'Orbitron', sans-serif; color: #fff; 
-            user-select: none; touch-action: none;
         }
 
-        /* ==========================================
-           КРУТОЙ ЗАГРУЗОЧНЫЙ ЭКРАН (PRELOADER)
-           ========================================== */
-        #preloader {
-            position: fixed; inset: 0; z-index: 999;
-            background: var(--bg-dark);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: opacity 1s ease-out, visibility 1s;
-        }
-        
-        #preloader.fade-out { opacity: 0; visibility: hidden; }
-
-        .loader-logo {
-            font-size: 3rem; font-weight: 900; color: var(--neon-blue);
-            text-shadow: 0 0 20px var(--neon-blue); margin-bottom: 20px;
-            animation: pulseGlow 2s infinite;
-        }
-
-        .loader-bar-container {
-            width: 250px; height: 6px; background: rgba(255,255,255,0.05);
-            border-radius: 3px; overflow: hidden; position: relative;
-            border: 1px solid rgba(0,255,255,0.2);
-        }
-
-        .loader-bar-fill {
-            height: 100%; background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
-            width: 0%; box-shadow: 0 0 15px var(--neon-blue);
-            animation: fillProgress 2.5s forwards cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        
-        .loader-text {
-            font-size: 10px; color: var(--neon-blue); text-transform: uppercase;
-            letter-spacing: 2px; margin-top: 10px; opacity: 0.8;
-            animation: blinkText 1s infinite;
-        }
-
-        /* Анимации прелоадера */
-        @keyframes pulseGlow { 0%, 100% { text-shadow: 0 0 10px var(--neon-blue); } 50% { text-shadow: 0 0 30px var(--neon-blue), 0 0 10px var(--neon-purple); } }
-        @keyframes fillProgress { 0% { width: 0%; } 100% { width: 100%; } }
-        @keyframes blinkText { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
-
-        /* ==========================================
-           ОСНОВНОЙ КОД ИГРЫ (БЕЗ ИЗМЕНЕНИЙ)
-           ========================================== */
         #game-container { 
             position: relative; width: 100%; max-width: 500px; height: 100%; 
-            margin: 0 auto; background: var(--bg-dark); overflow: hidden;
-            border-left: 2px solid #111; border-right: 2px solid #111;
+            margin: 0 auto; background: #050510; overflow: hidden;
+            border: 1px solid #222;
         }
 
+        /* Арена */
         .arena {
             position: absolute; inset: 0;
-            background: 
-                linear-gradient(90deg, rgba(0,255,255,0.03) 1px, transparent 1px),
-                linear-gradient(rgba(0,255,255,0.03) 1px, transparent 1px);
-            background-size: 40px 40px;
+            background: linear-gradient(to bottom, #000 0%, #050515 50%, #000 100%);
         }
-        
-        .bridge {
-            position: absolute; top: 50%; width: 80px; height: 4px;
-            background: var(--neon-blue); box-shadow: 0 0 15px var(--neon-blue);
-            transform: translateY(-50%); opacity: 0.3;
+        .grid-line {
+            position: absolute; width: 100%; height: 2px; background: rgba(0,255,255,0.1); top: 50%;
+            box-shadow: 0 0 10px var(--neon-blue); z-index: 1;
         }
 
+        /* Базы */
         .base {
             position: absolute; left: 50%; transform: translateX(-50%);
-            width: 80px; height: 80px; border-radius: 20px;
+            width: 70px; height: 70px; border-radius: 15px;
             display: flex; align-items: center; justify-content: center;
-            border: 3px solid #fff; z-index: 10;
+            border: 3px solid #fff; z-index: 10; font-size: 30px;
         }
-        .player-base { bottom: 120px; border-color: var(--neon-blue); box-shadow: 0 0 20px var(--neon-blue); }
+        .player-base { bottom: 130px; border-color: var(--neon-blue); box-shadow: 0 0 20px var(--neon-blue); }
         .enemy-base { top: 40px; border-color: var(--neon-pink); box-shadow: 0 0 20px var(--neon-pink); }
 
-        .unit {
-            position: absolute; width: 30px; height: 30px;
-            transition: transform 0.1s linear; z-index: 5;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .hp-bar {
-            position: absolute; top: -10px; width: 100%; height: 4px;
-            background: #333; border-radius: 2px;
-        }
-        .hp-val { height: 100%; background: #0f0; transition: 0.2s; }
+        /* Юниты */
+        .unit { position: absolute; width: 30px; height: 30px; z-index: 5; pointer-events: none; }
+        .hp-bar { position: absolute; top: -8px; width: 100%; height: 4px; background: #333; border-radius: 2px; }
+        .hp-val { height: 100%; background: #0f0; }
 
+        /* Интерфейс высадки */
+        #drop-zone {
+            position: absolute; bottom: 110px; width: 100%; height: calc(100% - 110px);
+            z-index: 40; display: none;
+        }
+        .valid-zone { position: absolute; bottom: 0; width: 100%; height: 45%; background: rgba(0,255,255,0.05); }
+
+        /* Карты */
         #deck {
             position: absolute; bottom: 0; width: 100%; height: 110px;
             background: var(--glass); display: flex; justify-content: space-around;
-            align-items: center; border-top: 2px solid var(--neon-blue); padding: 5px;
+            align-items: center; border-top: 2px solid var(--neon-blue); z-index: 50;
         }
         .card {
-            width: 80px; height: 95px; background: rgba(255,255,255,0.05);
-            border: 1px solid var(--neon-blue); border-radius: 10px;
+            width: 75px; height: 90px; background: rgba(255,255,255,0.05);
+            border: 2px solid var(--neon-blue); border-radius: 10px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            cursor: pointer; transition: 0.2s;
+            cursor: pointer; transition: 0.2s; position: relative;
         }
-        .card:active { transform: scale(0.9); background: var(--neon-blue); color: #000; }
-        .card.disabled { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
-        .cost { font-weight: 900; color: var(--neon-blue); margin-top: 5px; }
+        .card.selected { background: var(--neon-blue); color: #000; transform: translateY(-10px); box-shadow: 0 0 20px var(--neon-blue); }
+        .card.disabled { opacity: 0.3; filter: grayscale(1); pointer-events: none; }
+        .cost-badge { position: absolute; top: -10px; right: -10px; background: var(--neon-purple); width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; border: 2px solid #fff;}
 
-        #elixir-container {
-            position: absolute; bottom: 110px; width: 100%; height: 10px;
-            background: #111;
-        }
-        #elixir-fill { height: 100%; background: var(--neon-purple); width: 0%; transition: 0.1s; box-shadow: 0 0 10px var(--neon-purple); }
-
+        /* Экраны */
         .screen {
-            position: absolute; inset: 0; z-index: 100;
-            background: rgba(0,0,0,0.9); display: flex;
+            position: absolute; inset: 0; z-index: 200;
+            background: rgba(0,0,0,0.95); display: flex;
             flex-direction: column; align-items: center; justify-content: center;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px); text-align: center; padding: 20px;
         }
-        .hidden { display: none; }
-        
-        button {
-            padding: 15px 40px; background: none; border: 2px solid var(--neon-blue);
-            color: var(--neon-blue); font-family: 'Orbitron'; font-weight: 900;
-            border-radius: 50px; cursor: pointer; transition: 0.3s;
-        }
-        button:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 20px var(--neon-blue); }
+        .hidden { display: none !important; }
 
-        .vfx { position: absolute; pointer-events: none; border-radius: 50%; animation: explode 0.5s ease-out forwards; }
-        @keyframes explode { from { transform: scale(0); opacity: 1; } to { transform: scale(3); opacity: 0; } }
+        h1 { font-size: 2.5rem; margin-bottom: 10px; }
+        .win-text { color: var(--neon-blue); text-shadow: 0 0 20px var(--neon-blue); }
+        .lose-text { color: var(--neon-pink); text-shadow: 0 0 20px var(--neon-pink); }
+
+        .btn-group { display: flex; gap: 15px; margin-top: 30px; }
+        button {
+            padding: 12px 25px; background: none; border: 2px solid var(--neon-blue);
+            color: var(--neon-blue); font-family: 'Orbitron'; font-weight: 900;
+            border-radius: 5px; cursor: pointer; transition: 0.3s;
+        }
+        button:hover { background: var(--neon-blue); color: #000; }
+
+        #elixir-bar { position: absolute; bottom: 110px; width: 0%; height: 6px; background: var(--neon-purple); box-shadow: 0 0 10px var(--neon-purple); z-index: 51; transition: 0.1s; }
     </style>
 </head>
 <body>
 
-<div id="preloader">
-    <div class="loader-logo">ASTRO</div>
-    <div class="loader-bar-container">
-        <div class="loader-bar-fill"></div>
-    </div>
-    <div class="loader-text">INITIALIZING SYSTEMS...</div>
-</div>
-
 <div id="game-container">
-    <div class="arena">
-        <div class="bridge" style="left: 20%;"></div>
-        <div class="bridge" style="right: 20%;"></div>
-    </div>
-
-    <div id="p-base" class="base player-base"><span>🛡️</span></div>
-    <div id="e-base" class="base enemy-base"><span>💀</span></div>
-
-    <div id="elixir-container"><div id="elixir-fill"></div></div>
-
-    <div id="deck">
-        <div class="card" onclick="spawn('scout')">
-            <span style="font-size:20px">🛸</span>
-            <div class="cost">2</div>
-            <div style="font-size:8px">SCOUT</div>
-        </div>
-        <div class="card" onclick="spawn('destroyer')">
-            <span style="font-size:20px">🚀</span>
-            <div class="cost">4</div>
-            <div style="font-size:8px">FRIGATE</div>
-        </div>
-        <div class="card" onclick="spawn('dreadnought')">
-            <span style="font-size:20px">🛰️</span>
-            <div class="cost">7</div>
-            <div style="font-size:8px">TITAN</div>
-        </div>
-    </div>
+    <div class="arena"><div class="grid-line"></div></div>
 
     <div id="start-screen" class="screen">
-        <h1 style="color:var(--neon-blue); text-shadow: 0 0 15px var(--neon-blue);">ASTRO ROYALE</h1>
-        <p style="text-align:center; font-size:12px; margin-bottom:30px">DEFEND YOUR BASE<br>DESTROY THE ENEMY</p>
-        <button onclick="startGame()">BATTLE</button>
+        <h1 class="win-text">ASTRO ROYALE</h1>
+        <p>SELECT YOUR DECK:</p>
+        <div class="btn-group">
+            <button onclick="pickDeck('balanced')">BALANCED</button>
+            <button onclick="pickDeck('rush')">RUSH</button>
+        </div>
+        <button style="margin-top:20px; width:100%" onclick="pickDeck('heavy')">HEAVY TITANS</button>
     </div>
+
+    <div id="end-screen" class="screen hidden">
+        <h1 id="end-title">VICTORY</h1>
+        <p id="end-msg">Enemy base annihilated!</p>
+        <div class="btn-group">
+            <button onclick="location.reload()">MAIN MENU</button>
+            <button onclick="restartGame()">PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <div id="p-base" class="base player-base">🛡️</div>
+    <div id="e-base" class="base enemy-base">💀</div>
+
+    <div id="elixir-bar"></div>
+    <div id="drop-zone"><div class="valid-zone"></div></div>
+
+    <div id="deck"></div>
 </div>
 
 <script>
-    // СКРИПТ ПРЕЛОАДЕРА
-    window.addEventListener('load', function() {
-        const preloader = document.getElementById('preloader');
-        // Даем анимации полоски закончиться (2.5с) + небольшая задержка для плавности
-        setTimeout(() => {
-            preloader.classList.add('fade-out');
-        }, 3000); 
-    });
-
-    // СКРИПТ ИГРЫ (БЕЗ ИЗМЕНЕНИЙ)
     const cont = document.getElementById('game-container');
-    const elixirFill = document.getElementById('elixir-fill');
+    const dropZone = document.getElementById('drop-zone');
+    const deckEl = document.getElementById('deck');
     
     let gameActive = false;
     let elixir = 5;
     let units = [];
     let pBaseHp = 1000, eBaseHp = 1000;
+    let selectedType = null;
 
     const unitTypes = {
-        scout: { hp: 100, dmg: 10, spd: 2, cost: 2, icon: '🛸', color: '#0ff' },
-        destroyer: { hp: 300, dmg: 30, spd: 1.2, cost: 4, icon: '🚀', color: '#0f8' },
-        dreadnought: { hp: 800, dmg: 60, spd: 0.6, cost: 7, icon: '🛰️', color: '#f0f' }
+        scout: { hp: 120, dmg: 15, spd: 2, cost: 2, icon: '🛸' },
+        frigate: { hp: 350, dmg: 35, spd: 1.2, cost: 4, icon: '🚀' },
+        titan: { hp: 900, dmg: 70, spd: 0.7, cost: 7, icon: '🛰️' },
+        raider: { hp: 200, dmg: 25, spd: 2.5, cost: 3, icon: '⚡' }
     };
 
-    function startGame() {
+    const decks = {
+        balanced: ['scout', 'frigate', 'titan'],
+        rush: ['scout', 'raider', 'frigate'],
+        heavy: ['frigate', 'titan', 'titan']
+    };
+
+    function pickDeck(d) {
+        currentDeck = decks[d];
+        renderDeck();
         document.getElementById('start-screen').classList.add('hidden');
-        gameActive = true;
-        update();
-        setInterval(aiLogic, 3000); 
+        startGame();
     }
 
-    function spawn(type, isEnemy = false) {
+    function renderDeck() {
+        deckEl.innerHTML = '';
+        currentDeck.forEach(type => {
+            const t = unitTypes[type];
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `<span style="font-size:24px">${t.icon}</span><div class="cost-badge">${t.cost}</div><div style="font-size:8px; margin-top:5px">${type.toUpperCase()}</div>`;
+            card.onclick = () => selectCard(type, card);
+            deckEl.appendChild(card);
+        });
+    }
+
+    function selectCard(type, el) {
+        if(elixir < unitTypes[type].cost) return;
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+        if(selectedType === type) {
+            selectedType = null;
+            dropZone.style.display = 'none';
+        } else {
+            selectedType = type;
+            el.classList.add('selected');
+            dropZone.style.display = 'block';
+        }
+    }
+
+    dropZone.onclick = (e) => {
+        if(!selectedType) return;
+        const rect = cont.getBoundingClientRect();
+        const y = e.clientY - rect.top;
+        const x = e.clientX - rect.left;
+
+        // Можно ставить только на нижней половине (своя территория)
+        if(y > rect.height * 0.55 && y < rect.height - 110) {
+            spawn(selectedType, false, x - 15, y - 15);
+            elixir -= unitTypes[selectedType].cost;
+            selectedType = null;
+            dropZone.style.display = 'none';
+            document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+        }
+    };
+
+    function spawn(type, isEnemy, x, y) {
         const t = unitTypes[type];
-        if(!isEnemy && elixir < t.cost) return;
-        if(!isEnemy) elixir -= t.cost;
-
-        const u = {
-            id: Date.now() + Math.random(),
-            type: type,
-            hp: t.hp,
-            maxHp: t.hp,
-            isEnemy: isEnemy,
-            x: (cont.offsetWidth/2 - 15),
-            y: isEnemy ? 130 : cont.offsetHeight - 230,
-            el: null
-        };
-
-        u.x += (Math.random() > 0.5 ? 80 : -80);
-
+        const u = { id: Math.random(), type, hp: t.hp, maxHp: t.hp, isEnemy, x, y, el: null };
+        
         const div = document.createElement('div');
         div.className = 'unit';
-        div.innerHTML = `
-            <div class="hp-bar"><div class="hp-val" style="width:100%"></div></div>
-            <span style="font-size:24px; filter: drop-shadow(0 0 5px ${isEnemy ? '#f06' : '#0ff'})">${t.icon}</span>
-        `;
-        
+        div.innerHTML = `<div class="hp-bar"><div class="hp-val" style="width:100%"></div></div><span style="font-size:24px">${t.icon}</span>`;
+        if(isEnemy) div.style.transform = 'rotate(180deg)';
         u.el = div;
         cont.appendChild(div);
         units.push(u);
     }
 
-    function aiLogic() {
-        if(!gameActive) return;
-        const types = ['scout', 'destroyer', 'dreadnought'];
-        const randomType = types[Math.floor(Math.random() * types.length)];
-        spawn(randomType, true);
+    function startGame() {
+        gameActive = true;
+        pBaseHp = 1000; eBaseHp = 1000;
+        update();
+        setInterval(() => {
+            if(gameActive) spawn(currentDeck[Math.floor(Math.random()*3)], true, Math.random()*(cont.offsetWidth-40), 100);
+        }, 4000);
+    }
+
+    function restartGame() {
+        units.forEach(u => u.el.remove());
+        units = [];
+        elixir = 5;
+        document.getElementById('end-screen').classList.add('hidden');
+        gameActive = true;
+    }
+
+    function showEnd(win) {
+        gameActive = false;
+        const screen = document.getElementById('end-screen');
+        const title = document.getElementById('end-title');
+        title.innerText = win ? "VICTORY" : "DEFEAT";
+        title.className = win ? "win-text" : "lose-text";
+        document.getElementById('end-msg').innerText = win ? "You conquered the sector!" : "Your base was destroyed...";
+        screen.classList.remove('hidden');
     }
 
     function update() {
         if(!gameActive) return;
 
-        if(elixir < 10) elixir += 0.015;
-        elixirFill.style.width = (elixir * 10) + '%';
+        if(elixir < 10) elixir += 0.02;
+        document.getElementById('elixir-bar').style.width = (elixir * 10) + '%';
 
         document.querySelectorAll('.card').forEach((c, i) => {
-            const type = Object.keys(unitTypes)[i];
-            if(elixir < unitTypes[type].cost) c.classList.add('disabled');
+            if(elixir < unitTypes[currentDeck[i]].cost) c.classList.add('disabled');
             else c.classList.remove('disabled');
         });
 
         units.forEach((u, i) => {
             const config = unitTypes[u.type];
-            const direction = u.isEnemy ? 1 : -1;
-            let targetFound = false;
+            const dir = u.isEnemy ? 1 : -1;
+            let target = null;
 
-            const distToBase = u.isEnemy ? (cont.offsetHeight - 230 - u.y) : (u.y - 130);
-            if(Math.abs(distToBase) < 20) {
-                if(u.isEnemy) pBaseHp -= config.dmg/10;
-                else eBaseHp -= config.dmg/10;
-                targetFound = true;
-            }
-
+            // Ищем ближайшего врага
             units.forEach(other => {
                 if(u.isEnemy !== other.isEnemy) {
-                    const dist = Math.hypot(u.x - other.x, u.y - other.y);
-                    if(dist < 40) {
-                        other.hp -= config.dmg/20;
-                        targetFound = true;
-                    }
+                    const d = Math.hypot(u.x - other.x, u.y - other.y);
+                    if(d < 60) target = other;
                 }
             });
 
-            if(!targetFound) {
-                u.y += config.spd * direction;
+            if(target) {
+                target.hp -= config.dmg / 30;
+            } else {
+                const distToBase = u.isEnemy ? (cont.offsetHeight - 200 - u.y) : (u.y - 110);
+                if(Math.abs(distToBase) < 30) {
+                    if(u.isEnemy) pBaseHp -= config.dmg/20; else eBaseHp -= config.dmg/20;
+                } else {
+                    u.y += config.spd * dir;
+                }
             }
 
             u.el.style.transform = `translate(${u.x}px, ${u.y}px) ${u.isEnemy ? 'rotate(180deg)' : ''}`;
-            u.el.querySelector('.hp-val').style.width = (u.hp / u.maxHp * 100) + '%';
+            u.el.querySelector('.hp-val').style.width = (u.hp/u.maxHp*100)+'%';
 
-            if(u.hp <= 0) {
-                createExplosion(u.x, u.y, u.isEnemy ? '#f06' : '#0ff');
-                u.el.remove();
-                units.splice(i, 1);
-            }
+            if(u.hp <= 0) { u.el.remove(); units.splice(i, 1); }
         });
 
-        if(pBaseHp <= 0 || eBaseHp <= 0) {
-            gameActive = false;
-            alert(pBaseHp <= 0 ? "GAME OVER! YOUR BASE DESTROYED" : "VICTORY! ENEMY BASE CAPTURED");
-            location.reload();
-        }
+        if(pBaseHp <= 0) showEnd(false);
+        if(eBaseHp <= 0) showEnd(true);
 
         requestAnimationFrame(update);
-    }
-
-    function createExplosion(x, y, color) {
-        const v = document.createElement('div');
-        v.className = 'vfx';
-        v.style.left = x + 'px';
-        v.style.top = y + 'px';
-        v.style.width = '30px'; v.style.height = '30px';
-        v.style.background = color;
-        cont.appendChild(v);
-        setTimeout(() => v.remove(), 500);
     }
 </script>
 
