@@ -1,28 +1,42 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>ICE BREAKER: THE GAME</title>
+    <meta charset="UTF-8">
+    <title>ICE BREAKER: PENGUIN VS ROBOTS</title>
     <style>
-        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: sans-serif; }
-        #ui { position: fixed; top: 20px; left: 20px; color: white; text-shadow: 2px 2px #000; }
+        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: 'Arial Black', sans-serif; }
+        #ui { 
+            position: fixed; top: 20px; left: 20px; color: white; 
+            text-shadow: 3px 3px #000; z-index: 10; pointer-events: none; 
+        }
+        #loading {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: white; font-size: 24px; text-shadow: 2px 2px #000;
+        }
     </style>
 </head>
 <body>
+
 <div id="ui">
-    <h1>ICE BREAKER ВЕРСИЯ 1.0 🐧</h1>
-    <p>WASD - Ходить | ЛКМ - Удар!</p>
+    <h1>ICE BREAKER V1.0 🐧❄️</h1>
+    <p>WASD — БЕГАТЬ | SPACE — ПРЫЖОК</p>
+    <p>ЛКМ — УДАР ЛЬДОМ!</p>
 </div>
+<div id="loading">ЗАГРУЗКА АЙСБРЕЙКЕРА...</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
 <script>
-let scene, camera, renderer, penguin;
+let scene, camera, renderer, penguin, clock = new THREE.Clock();
 let keys = {};
+let robots = [];
 
 function init() {
+    // 1. СОЗДАЕМ МИР
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87CEEB);
+    scene.fog = new THREE.Fog(0x87CEEB, 1, 50);
 
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(0, 5, 10);
@@ -31,46 +45,89 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+    // 2. СВЕТ (Чтобы пингвин блестел)
+    scene.add(new THREE.AmbientLight(0xffffff, 0.8));
     let sun = new THREE.DirectionalLight(0xffffff, 1);
-    sun.position.set(5, 10, 5);
+    sun.position.set(10, 20, 10);
     scene.add(sun);
 
-    // Пол
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({color: 0xffffff}));
+    // 3. ЗЕМЛЯ (Снежная арена)
+    const groundGeo = new THREE.PlaneGeometry(100, 100);
+    const groundMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI / 2;
     scene.add(ground);
 
-    // ЗАГРУЗКА ТВОЕГО ПИНГВИНА
+    // 4. ЗАГРУЗКА ТВОЕГО ПИНГВИНА Ice_Breaker
     const loader = new THREE.GLTFLoader();
     loader.load('Ice_Breaker.glb', function(gltf) {
         penguin = gltf.scene;
-        penguin.scale.set(1, 1, 1); // Можно изменить размер здесь
+        
+        // Если пингвин слишком мелкий — поменяй 2 на 5 или 10!
+        penguin.scale.set(2, 2, 2); 
         scene.add(penguin);
-        console.log("Ice_Breaker загружен!");
-    }, undefined, function(error) {
-        console.error("Ошибка загрузки! Проверь, что файл Ice_Breaker.glb в той же папке.");
+        
+        // Убираем надпись "Загрузка"
+        document.getElementById('loading').style.display = 'none';
+        console.log("ICE_BREAKER ГОТОВ К БОЮ!");
+    }, 
+    undefined, 
+    function(error) {
+        console.error("ОШИБКА: Не нашел файл Ice_Breaker.glb!");
+        document.getElementById('loading').innerHTML = "ОШИБКА: Файл Ice_Breaker.glb не найден!";
     });
 
+    // 5. ВРАГИ (Роботы-кубики для теста)
+    for(let i=0; i<5; i++) {
+        let robot = new THREE.Mesh(
+            new THREE.BoxGeometry(1.5, 3, 1.5), 
+            new THREE.MeshStandardMaterial({color: 0xff0000})
+        );
+        robot.position.set(Math.random()*30-15, 1.5, Math.random()*-30-5);
+        scene.add(robot);
+        robots.push(robot);
+    }
+
+    // УПРАВЛЕНИЕ
     window.addEventListener('keydown', e => keys[e.code] = true);
     window.addEventListener('keyup', e => keys[e.code] = false);
+    
+    // АТАКА (Просто анимация для начала)
+    window.addEventListener('mousedown', () => {
+        if(penguin) {
+            penguin.rotation.y += 0.5; // Пингвин крутится при ударе!
+            setTimeout(() => { if(penguin) penguin.rotation.y -= 0.5; }, 100);
+        }
+    });
 
     animate();
 }
 
 function animate() {
     requestAnimationFrame(animate);
+    let delta = clock.getDelta();
+
     if(penguin) {
-        if(keys['KeyW']) penguin.position.z -= 0.1;
-        if(keys['KeyS']) penguin.position.z += 0.1;
-        if(keys['KeyA']) penguin.position.x -= 0.1;
-        if(keys['KeyD']) penguin.position.x += 0.1;
-        
-        camera.position.lerp(new THREE.Vector3(penguin.position.x, penguin.position.y + 5, penguin.position.z + 10), 0.1);
-        camera.lookAt(penguin.position);
+        // ДВИЖЕНИЕ ПИНГВИНА
+        if(keys['KeyW']) penguin.position.z -= 0.15;
+        if(keys['KeyS']) penguin.position.z += 0.15;
+        if(keys['KeyA']) penguin.position.x -= 0.15;
+        if(keys['KeyD']) penguin.position.x += 0.15;
+
+        // КАМЕРА СЛЕДИТ ЗА ГЕРОЕМ
+        camera.position.lerp(new THREE.Vector3(penguin.position.x, penguin.position.y + 6, penguin.position.z + 12), 0.1);
+        camera.lookAt(penguin.position.x, penguin.position.y + 1, penguin.position.z);
     }
+
     renderer.render(scene, camera);
 }
+
+// Запуск при изменении размера окна
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
 
 init();
 </script>
