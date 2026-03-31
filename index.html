@@ -2,196 +2,211 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>ZOMBIE SURVIVAL - BOGDAN EDITION</title>
+    <title>BOGDAN SURVIVAL PRO</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Comic Sans MS', sans-serif; }
-        #ui { position: absolute; top: 20px; left: 20px; color: white; text-shadow: 2px 2px 4px #000; pointer-events: none; }
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 20px; height: 20px; border: 2px solid white; border-radius: 50%; transform: translate(-50%, -50%); }
-        #menu { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 40px; border-radius: 20px; text-align: center; display: none; pointer-events: all; }
-        button { background: #4CAF50; border: none; color: white; padding: 15px 32px; font-size: 20px; border-radius: 10px; cursor: pointer; }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #000; }
+        #overlay { position: absolute; width: 100%; height: 100%; background: radial-gradient(circle, transparent 30%, rgba(0,0,0,0.4) 100%); pointer-events: none; }
+        
+        /* ГЛАВНОЕ МЕНЮ */
+        #mainMenu { position: absolute; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; color: white; transition: 0.5s; }
+        .btn { background: #4CAF50; border: none; color: white; padding: 15px 40px; font-size: 24px; border-radius: 50px; cursor: pointer; margin: 10px; transition: 0.3s; box-shadow: 0 5px 15px rgba(76,175,80,0.4); }
+        .btn:hover { transform: scale(1.1); background: #66bb6a; }
+        .settings-panel { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 15px; margin-top: 20px; display: none; }
+
+        /* ИНТЕРФЕЙС ИГРЫ */
+        #hud { position: absolute; bottom: 30px; left: 30px; color: white; pointer-events: none; display: none; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; background: red; border-radius: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 5px red; }
+        .stat-bar { width: 200px; height: 20px; background: rgba(0,0,0,0.5); border: 2px solid #fff; border-radius: 10px; overflow: hidden; margin-top: 5px; }
+        #hpFill { width: 100%; height: 100%; background: #ff4b2b; transition: 0.3s; }
     </style>
 </head>
 <body>
 
-<div id="ui">
-    <h1>LEVEL: <span id="lvl">1</span></h1>
-    <h2>HEALTH: <span id="hp">100</span>%</h2>
-    <h2>GOLD: <span id="gold">0</span> | SCORE: <span id="score">0</span></h2>
+<div id="overlay"></div>
+
+<div id="mainMenu">
+    <h1 style="font-size: 60px; margin-bottom: 10px; color: #4CAF50;">Z-STRIKE</h1>
+    <p>Мультяшный апокалипсис от Богдана</p>
+    <button class="btn" onclick="startGame()">ИГРАТЬ</button>
+    <button class="btn" style="background: #555;" onclick="toggleSettings()">НАСТРОЙКИ</button>
+    
+    <div id="settings" class="settings-panel">
+        <h3>Графика</h3>
+        <label><input type="checkbox" id="shadows" checked> Мягкие тени</label><br>
+        <label><input type="checkbox" id="antialiasing" checked> Сглаживание</label>
+    </div>
+</div>
+
+<div id="hud">
+    <div>ЗДОРОВЬЕ</div>
+    <div class="stat-bar"><div id="hpFill"></div></div>
+    <h2 style="margin: 10px 0 0 0;">УРОВЕНЬ: <span id="lvl">1</span></h2>
+    <h3 style="color: #ffd700;">ЗОЛОТО: <span id="gold">0</span></h3>
 </div>
 
 <div id="crosshair"></div>
-
-<div id="menu">
-    <h1 id="menuTitle">ИГРА ОКОНЧЕНА</h1>
-    <p>Твой результат: <span id="finalScore">0</span></p>
-    <button onclick="location.reload()">ИГРАТЬ СНОВА</button>
-</div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
 
 <script>
-let scene, camera, renderer, controls;
-let gun, zombies = [], bullets = [];
-let score = 0, hp = 100, gold = 0, level = 1;
-let isGameOver = false;
+let scene, camera, renderer, controls, gun;
+let zombies = [], bullets = [], clock = new THREE.Clock();
+let hp = 100, gold = 0, level = 1, isPlaying = false;
 
-// 1. ИНИЦИАЛИЗАЦИЯ
 function init() {
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x87CEEB); // Голубое небо
+    scene.background = new THREE.Color(0x87CEEB);
+    scene.fog = new THREE.FogExp2(0x87CEEB, 0.015); // КРАСИВЫЙ ТУМАН
 
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    renderer = new THREE.WebGLRenderer({ antialias: true });
+    camera.position.y = 1.6;
+
+    renderer = new THREE.WebGLRenderer({ antialias: document.getElementById('antialiasing').checked });
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = document.getElementById('shadows').checked;
     document.body.appendChild(renderer.domElement);
 
     controls = new THREE.PointerLockControls(camera, document.body);
-    document.addEventListener('click', () => { if(!isGameOver) controls.lock(); });
 
-    // Свет
-    const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+    // ОСВЕЩЕНИЕ
+    const ambient = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambient);
-    const sun = new THREE.DirectionalLight(0xffffff, 1);
-    sun.position.set(10, 20, 10);
+    const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+    sun.position.set(50, 100, 50);
+    sun.castShadow = true;
     scene.add(sun);
 
-    // Травка
-    const grass = new THREE.Mesh(
+    // ТРАВА
+    const plane = new THREE.Mesh(
         new THREE.PlaneGeometry(1000, 1000),
-        new THREE.MeshStandardMaterial({ color: 0x567d46 })
+        new THREE.MeshStandardMaterial({ color: 0x7cfc00 })
     );
-    grass.rotation.x = -Math.PI / 2;
-    scene.add(grass);
+    plane.rotation.x = -Math.PI / 2;
+    plane.receiveShadow = true;
+    scene.add(plane);
 
-    // Промокод
-    let code = prompt("ВВЕДИ КОД (ПОДСКАЗКА: RELEASE):");
-    if(code === "RELEASE") { gold = 500; updateUI(); }
-
-    loadAssets();
+    loadModels();
     window.addEventListener('mousedown', shoot);
     animate();
 }
 
-// 2. ЗАГРУЗКА МОДЕЛЕЙ (ТВОИХ!)
-const loader = new THREE.GLTFLoader();
-
-function loadAssets() {
-    // Твой Бомбастик (Дробовик)
+function loadModels() {
+    const loader = new THREE.GLTFLoader();
+    
+    // Оружие
     loader.load('bombastic.glb', (gltf) => {
         gun = gltf.scene;
-        gun.scale.set(0.5, 0.5, 0.5);
-        gun.position.set(0.5, -0.5, -1);
+        gun.position.set(0.5, -0.6, -1); // Удобная позиция
+        gun.scale.set(0.4, 0.4, 0.4);
         camera.add(gun);
         scene.add(camera);
     });
 
-    // Твой город
-    for(let i=0; i<40; i++) {
+    // Город (один раз расставим)
+    for(let i=0; i<30; i++) {
         loader.load('building.glb', (gltf) => {
             const b = gltf.scene;
-            b.position.set((Math.random()-0.5)*400, 0, (Math.random()-0.5)*400);
-            if(b.position.length() < 20) b.position.x += 30; 
-            b.rotation.y = Math.random() * Math.PI;
-            b.scale.set(3, 3, 3);
+            b.position.set((Math.random()-0.5)*300, 0, (Math.random()-0.5)*300);
+            if(b.position.length() < 15) b.position.x += 20;
+            b.scale.set(4, 4, 4);
             scene.add(b);
         });
     }
+}
 
-    // Спавн зомби каждые 3 секунды
-    setInterval(() => { if(!isGameOver) spawnZombie(); }, 3000 / (1 + level * 0.1));
+function startGame() {
+    document.getElementById('mainMenu').style.opacity = '0';
+    setTimeout(() => {
+        document.getElementById('mainMenu').style.display = 'none';
+        document.getElementById('hud').style.display = 'block';
+        controls.lock();
+        isPlaying = true;
+        spawnLoop();
+    }, 500);
+}
+
+function toggleSettings() {
+    const s = document.getElementById('settings');
+    s.style.display = s.style.display === 'block' ? 'none' : 'block';
+}
+
+function spawnLoop() {
+    if(!isPlaying) return;
+    spawnZombie();
+    setTimeout(spawnLoop, 3000 / (1 + level * 0.1));
 }
 
 function spawnZombie() {
-    loader.load('zombie.glb', (gltf) => {
+    new THREE.GLTFLoader().load('zombie.glb', (gltf) => {
         const z = gltf.scene;
-        const dist = 60;
         const angle = Math.random() * Math.PI * 2;
-        z.position.set(camera.position.x + Math.cos(angle)*dist, 0, camera.position.z + Math.sin(angle)*dist);
-        z.scale.set(1, 1, 1);
-        z.lookAt(camera.position.x, 0, camera.position.z);
-        scene.add(z);
+        z.position.set(camera.position.x + Math.cos(angle)*50, 0, camera.position.z + Math.sin(angle)*50);
+        z.scale.set(1.2, 1.2, 1.2);
         zombies.push(z);
+        scene.add(z);
     });
 }
 
-// 3. СТРЕЛЬБА
 function shoot() {
-    if(!controls.isLocked || isGameOver) return;
-
-    const bGeo = new THREE.SphereGeometry(0.15, 8, 8);
-    const bMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-    const b = new THREE.Mesh(bGeo, bMat);
+    if(!controls.isLocked || !isPlaying) return;
     
+    const b = new THREE.Mesh(
+        new THREE.SphereGeometry(0.1, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0xffcc00 })
+    );
     b.position.copy(camera.position);
     const dir = new THREE.Vector3();
     camera.getWorldDirection(dir);
     b.userData.velocity = dir.multiplyScalar(2);
-    
-    scene.add(b);
     bullets.push(b);
+    scene.add(b);
 
-    // Анимация отдачи пушки
-    if(gun) {
-        gun.position.z += 0.2;
-        setTimeout(() => gun.position.z -= 0.2, 50);
-    }
+    // АНИМАЦИЯ ОТДАЧИ
+    if(gun) gun.position.z += 0.2;
 }
 
-// 4. ГЕЙМПЛЕЙНЫЙ ЦИКЛ
 function animate() {
     requestAnimationFrame(animate);
-    if(isGameOver) return;
+    const time = clock.getElapsedTime();
 
-    // Пули
-    bullets.forEach((b, i) => {
-        b.position.add(b.userData.velocity);
-        if(b.position.distanceTo(camera.position) > 100) {
-            scene.remove(b);
-            bullets.splice(i, 1);
+    if(isPlaying && controls.isLocked) {
+        // АНИМАЦИЯ ПОКАЧИВАНИЯ (Bobbing)
+        if(gun) {
+            gun.position.y = -0.6 + Math.sin(time * 4) * 0.02;
+            gun.position.x = 0.5 + Math.cos(time * 2) * 0.01;
+            gun.position.z = THREE.MathUtils.lerp(gun.position.z, -1, 0.1); // Возврат после отдачи
         }
-        
-        zombies.forEach((z, zi) => {
-            if(b.position.distanceTo(z.position) < 2) {
-                scene.remove(z);
-                zombies.splice(zi, 1);
-                score += 10;
-                gold += 5;
-                if(score >= level * 100 && level < 30) { level++; }
-                updateUI();
+
+        // ПУЛИ
+        bullets.forEach((b, i) => {
+            b.position.add(b.userData.velocity);
+            zombies.forEach((z, zi) => {
+                if(b.position.distanceTo(z.position) < 2) {
+                    scene.remove(z); zombies.splice(zi, 1);
+                    gold += 10; scoreUpdate();
+                }
+            });
+        });
+
+        // ЗОМБИ
+        zombies.forEach(z => {
+            z.lookAt(camera.position.x, 0, camera.position.z);
+            z.translateZ(0.07);
+            if(z.position.distanceTo(camera.position) < 2) {
+                hp -= 0.2;
+                document.getElementById('hpFill').style.width = hp + '%';
+                if(hp <= 0) location.reload();
             }
         });
-    });
-
-    // Зомби (идут к игроку)
-    zombies.forEach((z, i) => {
-        const speed = 0.05 + (level * 0.01);
-        z.lookAt(camera.position.x, 0, camera.position.z);
-        z.translateZ(speed);
-
-        if(z.position.distanceTo(camera.position) < 2) {
-            hp -= 0.5;
-            updateUI();
-            if(hp <= 0) gameOver();
-        }
-    });
-
+    }
     renderer.render(scene, camera);
 }
 
-function updateUI() {
-    document.getElementById('hp').innerText = Math.ceil(hp);
-    document.getElementById('score').innerText = score;
+function scoreUpdate() {
     document.getElementById('gold').innerText = gold;
-    document.getElementById('lvl').innerText = level;
-}
-
-function gameOver() {
-    isGameOver = true;
-    controls.unlock();
-    document.getElementById('menu').style.display = 'block';
-    document.getElementById('finalScore').innerText = score;
+    if(gold > level * 200) { level++; document.getElementById('lvl').innerText = level; }
 }
 
 init();
