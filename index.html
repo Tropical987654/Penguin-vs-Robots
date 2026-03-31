@@ -79,7 +79,10 @@ function init() {
 
         // Позиция "в руках"
         gun.position.set(0.6, -0.5, -1.2); 
-        gun.rotation.y = Math.PI; // Разворачиваем стволом вперед
+        // Поворачиваем стволы вперед (на 90 градусов)
+        gun.rotation.y = Math.PI / 2; 
+        // Если он всё еще чуть-чуть не туда, попробуй добавить это:
+        // gun.rotation.y = -Math.PI / 2;
 
         camera.add(gun);
         document.getElementById('loading').style.display = 'none';
