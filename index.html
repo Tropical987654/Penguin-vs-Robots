@@ -39,14 +39,18 @@ let zombies = [], keys = {};
 
 function init() {
     // 1. Сцена и свет
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a0a0a);
-    scene.fog = new THREE.Fog(0x0a0a0a, 1, 60);
+    // Делаем общий свет ярче (0.8 или 1.0 — будет светло как днем)
+    const ambient = new THREE.AmbientLight(0xffffff, 0.8); 
+    scene.add(ambient);
 
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-    renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
+    // Добавляем «солнце» сверху, чтобы были тени и объем
+    const sun = new THREE.DirectionalLight(0xffffff, 1.0);
+    sun.position.set(10, 20, 10);
+    scene.add(sun);
+
+    // Фонарик у игрока (чтобы пушка всегда блестела)
+    const flashLight = new THREE.PointLight(0xffaa00, 1.5, 30);
+    camera.add(flashLight);
 
     // 2. Игрок
     player = new THREE.Group();
