@@ -1,40 +1,31 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>BOGDAN'S KITCHEN - FINAL FIX</title>
+    <title>ULTRA POWER WASH - BOGDAN</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: sans-serif; background: #111; }
-        #ui { position: absolute; top: 20px; left: 20px; color: white; text-shadow: 2px 2px 5px #000; z-index: 100; pointer-events: none; }
-        #overlay { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.8); display: flex; flex-direction: column;
-            justify-content: center; align-items: center; z-index: 200; color: white;
+        body { margin: 0; overflow: hidden; background: #87CEEB; font-family: 'Arial Black', sans-serif; }
+        #ui { position: absolute; top: 20px; left: 20px; color: white; text-shadow: 3px 3px #000; z-index: 10; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 15px; height: 15px; border: 3px solid #00f; border-radius: 50%; transform: translate(-50%, -50%); }
+        #stream { 
+            position: absolute; top: 60%; left: 50%; width: 6px; height: 200px; 
+            background: linear-gradient(to top, rgba(255,255,255,0.8), rgba(0,150,255,0)); 
+            display: none; transform: translateX(-50%) rotate(5deg); pointer-events: none;
         }
-        button { padding: 20px 40px; font-size: 24px; cursor: pointer; background: #ffcc00; border: none; border-radius: 10px; font-weight: bold; }
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; background: red; border-radius: 50%; transform: translate(-50%, -50%); border: 2px solid white; z-index: 50; }
-        #action-text { position: absolute; bottom: 25%; left: 50%; transform: translateX(-50%); color: #00ff00; font-size: 24px; text-align: center; z-index: 50; }
-        #progress-bar { position: absolute; bottom: 20%; left: 50%; transform: translateX(-50%); width: 300px; height: 30px; border: 3px solid white; display: none; background: rgba(0,0,0,0.5); z-index: 50; }
-        #progress-inner { height: 100%; background: #ffcc00; width: 0%; }
+        #progress-container { width: 300px; height: 20px; border: 2px solid white; background: #333; margin-top: 10px; }
+        #progress-fill { width: 0%; height: 100%; background: #0f0; transition: 0.1s; }
     </style>
 </head>
 <body>
 
-<div id="overlay">
-    <h1>BOGDAN'S KITCHEN 👨‍🍳</h1>
-    <p>Используй код <b>RELEASE</b> для получения 500 золота!</p>
-    <button id="start-btn">ИГРАТЬ (КЛИКНИ ТУТ!)</button>
-</div>
-
 <div id="ui">
-    <h1>ЗОЛОТО: <span id="gold">0</span> 💰</h1>
-    <h3>В РУКАХ: <span id="handItem">Ничего</span></h3>
-    <p>W,A,S,D - Ходить | E - Действие | R - Телепорт</p>
+    <h1>PROFESSIONAL POWER WASH 🚿</h1>
+    <div id="progress-container"><div id="progress-fill"></div></div>
+    <p>ОЧИЩЕНО: <span id="percent">0</span>%</p>
+    <p>Нажми <b>E</b> чтобы включить напор!</p>
 </div>
 
 <div id="crosshair"></div>
-<div id="action-text"></div>
-<div id="progress-bar"><div id="progress-inner"></div></div>
+<div id="stream"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -42,157 +33,68 @@
 
 <script>
 let scene, camera, renderer, controls, loader = new THREE.GLTFLoader();
-let gold = 0, handItem = null, foodInHandModel = null;
-let customers = [], particles = [];
-let interactiveObjects = { stove: null, oven: null, fridge: null };
-let stoveProgress = 0;
+let raycaster = new THREE.Raycaster();
+let isWashing = false, dirtTotal = 0, dirtRemoved = 0;
 
-// Инициализация игры
 function init() {
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x87CEEB);
-    
+    scene.background = new THREE.Color(0x6eb5ff);
+
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 2, 5); // Безопасная точка появления
+    camera.position.set(0, 3, 10);
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
     controls = new THREE.PointerLockControls(camera, document.body);
+    document.addEventListener('click', () => controls.lock());
+    
+    // Управление: ЛКМ или клавиша E
+    document.addEventListener('mousedown', () => isWashing = true);
+    document.addEventListener('mouseup', () => isWashing = false);
 
-    document.getElementById('start-btn').addEventListener('click', () => {
-        controls.lock();
-        document.getElementById('overlay').style.display = 'none';
-    });
+    scene.add(new THREE.AmbientLight(0xffffff, 1));
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.9));
-    const sun = new THREE.DirectionalLight(0xffffff, 1.2);
-    sun.position.set(10, 20, 10);
-    scene.add(sun);
-
-    // ЗАГРУЗКА МОДЕЛИ КАФЕ
-    loader.load('Cafe.glb', (gltf) => {
-        const model = gltf.scene;
-        scene.add(model);
-        model.traverse((child) => {
-            if (child.name.toLowerCase().includes('stove')) interactiveObjects.stove = child;
-            if (child.name.toLowerCase().includes('oven')) interactiveObjects.oven = child;
-            if (child.name.toLowerCase().includes('fridge')) interactiveObjects.fridge = child;
+    // Загрузка нашего супер-грязного фургона
+    loader.load('dirty_van.glb', (gltf) => {
+        scene.add(gltf.scene);
+        gltf.scene.traverse(child => {
+            if (child.isMesh) dirtTotal++;
         });
     });
 
-    spawnCustomer();
     animate();
 }
 
-// Промокод (вводить в консоль: useCode("RELEASE") )
-function useCode(code) {
-    if(code === "RELEASE") {
-        gold += 500;
-        document.getElementById('gold').innerText = gold;
-        alert("Код активирован! +500 золота!");
-    }
-}
-
-function handleInteraction() {
-    if (!controls.isLocked) return;
-
-    if (justPressed('KeyR')) camera.position.set(0, 2, 2);
-
-    // Плита
-    if (interactiveObjects.stove && camera.position.distanceTo(interactiveObjects.stove.getWorldPosition(new THREE.Vector3())) < 4) {
-        if (keys['KeyE'] && !handItem) {
-            if (stoveProgress < 100) {
-                stoveProgress += 0.5;
-                showProgress(stoveProgress);
-                createSmoke(interactiveObjects.stove.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 1, 0)));
-                document.getElementById('action-text').innerText = "ЖАРИМ...";
-            }
-        } else if (!keys['KeyE'] && stoveProgress >= 100) {
-            if (justPressed('KeyE')) { takeFood('burger'); stoveProgress = 0; hideProgress(); }
-        }
-    } else {
-        hideProgress();
-        document.getElementById('action-text').innerText = "";
-    }
-
-    // Отдать еду
-    customers.forEach((c, i) => {
-        if (camera.position.distanceTo(c.position) < 4 && justPressed('KeyE')) {
-            if (handItem === c.userData.want && !c.userData.isWalking) {
-                gold += 150;
-                document.getElementById('gold').innerText = gold;
-                clearHand();
-                scene.remove(c);
-                customers.splice(i, 1);
-                setTimeout(spawnCustomer, 3000);
-            }
-        }
-    });
-}
-
-function spawnCustomer() {
-    loader.load('customer.glb', (gltf) => {
-        const c = gltf.scene;
-        c.position.set((Math.random()-0.5)*2, 0, -10); 
-        c.userData = { want: 'burger', targetZ: -2, isWalking: true };
-        scene.add(c);
-        customers.push(c);
-    }, undefined, () => {
-        const c = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), new THREE.MeshBasicMaterial({color: 0xff00ff}));
-        c.position.set(0, 1, -10);
-        c.userData = { want: 'burger', targetZ: -2, isWalking: true };
-        scene.add(c);
-        customers.push(c);
-    });
-}
-
-function takeFood(type) {
-    clearHand();
-    handItem = type;
-    document.getElementById('handItem').innerText = type.toUpperCase();
-    // Тут можно добавить загрузку бургера burger.glb
-}
-
-function clearHand() { handItem = null; document.getElementById('handItem').innerText = "Ничего"; }
-function showProgress(v) { document.getElementById('progress-bar').style.display = 'block'; document.getElementById('progress-inner').style.width = v + '%'; }
-function hideProgress() { document.getElementById('progress-bar').style.display = 'none'; }
-function createSmoke(pos) {
-    const p = new THREE.Mesh(new THREE.SphereGeometry(0.1), new THREE.MeshBasicMaterial({color: 0x555555, transparent: true, opacity: 0.6}));
-    p.position.copy(pos);
-    scene.add(p);
-    particles.push({mesh: p, life: 1.0});
-}
-
-const keys = {}, prevKeys = {};
-document.addEventListener('keydown', (e) => keys[e.code] = true);
-document.addEventListener('keyup', (e) => keys[e.code] = false);
-function justPressed(c) { return keys[c] && !prevKeys[c]; }
-
 function animate() {
     requestAnimationFrame(animate);
-    handleInteraction();
     
-    customers.forEach((c) => {
-        if (c.userData.isWalking) {
-            if (c.position.z < c.userData.targetZ) c.position.z += 0.05;
-            else c.userData.isWalking = false;
+    if (controls.isLocked) {
+        if (isWashing) {
+            document.getElementById('stream').style.display = 'block';
+            
+            raycaster.setFromCamera(new THREE.Vector2(0,0), camera);
+            let intersects = raycaster.intersectObjects(scene.children, true);
+            
+            // СТРУЯ ВОДЫ УДАЛЯЕТ ГРЯЗЬ
+            if (intersects.length > 0) {
+                let hit = intersects[0].object;
+                if (hit.name.includes("Dirt")) {
+                    hit.visible = false; // Грязь исчезает!
+                    hit.position.set(0, -100, 0); // Убираем её из мира
+                    dirtRemoved++;
+                    
+                    let p = Math.floor((dirtRemoved / dirtTotal) * 100);
+                    document.getElementById('percent').innerText = p;
+                    document.getElementById('progress-fill').style.width = p + '%';
+                }
+            }
+        } else {
+            document.getElementById('stream').style.display = 'none';
         }
-    });
-
-    particles.forEach((p, i) => {
-        p.life -= 0.02; p.mesh.position.y += 0.03; p.mesh.material.opacity = p.life;
-        if(p.life <= 0) { scene.remove(p.mesh); particles.splice(i, 1); }
-    });
-
-    if(controls.isLocked) {
-        if(keys['KeyW']) controls.moveForward(0.1);
-        if(keys['KeyS']) controls.moveForward(-0.1);
-        if(keys['KeyA']) controls.moveRight(-0.1);
-        if(keys['KeyD']) controls.moveRight(0.1);
     }
-    Object.assign(prevKeys, keys);
+    
     renderer.render(scene, camera);
 }
 init();
