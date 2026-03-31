@@ -85,37 +85,51 @@ function init() {
 }
 
 function createCity() {
-    // ПОЛ (Асфальт)
+    // Делаем пол (асфальт)
     const floor = new THREE.Mesh(
-        new THREE.PlaneGeometry(200, 200),
+        new THREE.PlaneGeometry(300, 300),
         new THREE.MeshStandardMaterial({color: 0x111111})
     );
     floor.rotation.x = -Math.PI/2;
     scene.add(floor);
 
-    // ГЕНЕРАЦИЯ ЗДАНИЙ
-    for(let i = 0; i < 40; i++) {
-        let h = 10 + Math.random() * 20;
-        let w = 5 + Math.random() * 5;
-        const b = new THREE.Mesh(
-            new THREE.BoxGeometry(w, h, w),
-            new THREE.MeshStandardMaterial({color: 0x151520})
-        );
-        let x = (Math.random() - 0.5) * 150;
-        let z = (Math.random() - 0.5) * 150;
-        if(Math.abs(x) < 10 && Math.abs(z) < 10) x += 20; // Чтобы не в игроке
-        b.position.set(x, h/2, z);
-        scene.add(b);
-    }
+    // Загружаем твой мультяшный шедевр
+    const loader = new THREE.GLTFLoader();
+    loader.load('building.glb', (gltf) => {
+        for(let i = 0; i < 25; i++) {
+            const b = gltf.scene.clone();
+            
+            // Случайное место в городе
+            let x = (Math.random() - 0.5) * 200;
+            let z = (Math.random() - 0.5) * 200;
+            if(Math.abs(x) < 15 && Math.abs(z) < 15) x += 30; // Чтоб не на голове у игрока
+            
+            b.position.set(x, 0, z);
+            b.scale.set(1.5, 1.5, 1.5); // Если домик мелкий, сделай тут (3, 3, 3)
+            b.rotation.y = Math.random() * Math.PI; // Поворачиваем домики в разные стороны
+            
+            scene.add(b);
+        }
+        console.log("ГОРОД ПОСТРОЕН ИЗ ТВОИХ ДОМОВ!");
+    });
 }
 
 function spawnZombie() {
-    const z = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), new THREE.MeshStandardMaterial({color: 0x00ff00}));
-    const angle = Math.random() * Math.PI * 2;
-    z.position.set(player.position.x + Math.cos(angle)*30, 1, player.position.z + Math.sin(angle)*30);
-    z.userData = { hp: 50 };
-    scene.add(z);
-    zombies.push(z);
+    const loader = new THREE.GLTFLoader();
+    loader.load('zombie.glb', (gltf) => {
+        const z = gltf.scene;
+        
+        // Появление в случайном месте подальше от игрока
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 35;
+        z.position.set(player.position.x + Math.cos(angle)*dist, 0, player.position.z + Math.sin(angle)*dist);
+        
+        z.scale.set(0.8, 0.8, 0.8); // Подбери размер под домики
+        z.userData = { hp: 50 }; // Жизни зомби
+        
+        scene.add(z);
+        zombies.push(z);
+    });
 }
 
 function shoot() {
