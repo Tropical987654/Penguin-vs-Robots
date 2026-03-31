@@ -2,25 +2,38 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>BOGDAN'S KITCHEN - PRO WORKING</title>
+    <title>BOGDAN'S KITCHEN - FINAL FIX</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: sans-serif; background: #000; }
-        #ui { position: absolute; top: 20px; left: 20px; color: white; text-shadow: 2px 2px 5px #000; z-index: 10; }
-        #crosshair { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; background: red; border-radius: 50%; transform: translate(-50%, -50%); border: 2px solid white; }
-        #action-text { position: absolute; bottom: 25%; left: 50%; transform: translateX(-50%); color: #00ff00; font-size: 24px; text-align: center; }
-        #progress-bar { position: absolute; bottom: 20%; left: 50%; transform: translateX(-50%); width: 300px; height: 30px; border: 3px solid white; display: none; background: rgba(0,0,0,0.5); }
+        body { margin: 0; overflow: hidden; font-family: sans-serif; background: #111; }
+        #ui { position: absolute; top: 20px; left: 20px; color: white; text-shadow: 2px 2px 5px #000; z-index: 100; pointer-events: none; }
+        #overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.8); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; z-index: 200; color: white;
+        }
+        button { padding: 20px 40px; font-size: 24px; cursor: pointer; background: #ffcc00; border: none; border-radius: 10px; font-weight: bold; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 10px; height: 10px; background: red; border-radius: 50%; transform: translate(-50%, -50%); border: 2px solid white; z-index: 50; }
+        #action-text { position: absolute; bottom: 25%; left: 50%; transform: translateX(-50%); color: #00ff00; font-size: 24px; text-align: center; z-index: 50; }
+        #progress-bar { position: absolute; bottom: 20%; left: 50%; transform: translateX(-50%); width: 300px; height: 30px; border: 3px solid white; display: none; background: rgba(0,0,0,0.5); z-index: 50; }
         #progress-inner { height: 100%; background: #ffcc00; width: 0%; }
     </style>
 </head>
 <body>
 
+<div id="overlay">
+    <h1>BOGDAN'S KITCHEN 👨‍🍳</h1>
+    <p>Используй код <b>RELEASE</b> для получения 500 золота!</p>
+    <button id="start-btn">ИГРАТЬ (КЛИКНИ ТУТ!)</button>
+</div>
+
 <div id="ui">
     <h1>ЗОЛОТО: <span id="gold">0</span> 💰</h1>
     <h3>В РУКАХ: <span id="handItem">Ничего</span></h3>
-    <p style="color: yellow;">Застрял в столе? Нажми **R**!</p>
+    <p>W,A,S,D - Ходить | E - Действие | R - Телепорт</p>
 </div>
+
 <div id="crosshair"></div>
-<div id="action-text">КЛИКНИ, ЧТОБЫ НАЧАТЬ</div>
+<div id="action-text"></div>
 <div id="progress-bar"><div id="progress-inner"></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -32,29 +45,33 @@ let scene, camera, renderer, controls, loader = new THREE.GLTFLoader();
 let gold = 0, handItem = null, foodInHandModel = null;
 let customers = [], particles = [];
 let interactiveObjects = { stove: null, oven: null, fridge: null };
-let stoveProgress = 0, ovenStatus = 'closed';
+let stoveProgress = 0;
 
+// Инициализация игры
 function init() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x87CEEB);
     
     camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    // Позиция игрока за прилавком
-    camera.position.set(0, 2.5, 4); 
+    camera.position.set(0, 2, 5); // Безопасная точка появления
 
     renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
     controls = new THREE.PointerLockControls(camera, document.body);
-    document.addEventListener('click', () => controls.lock());
+
+    document.getElementById('start-btn').addEventListener('click', () => {
+        controls.lock();
+        document.getElementById('overlay').style.display = 'none';
+    });
 
     scene.add(new THREE.AmbientLight(0xffffff, 0.9));
     const sun = new THREE.DirectionalLight(0xffffff, 1.2);
     sun.position.set(10, 20, 10);
     scene.add(sun);
 
-    // Загрузка твоего Cafe.glb
+    // ЗАГРУЗКА МОДЕЛИ КАФЕ
     loader.load('Cafe.glb', (gltf) => {
         const model = gltf.scene;
         scene.add(model);
@@ -69,29 +86,40 @@ function init() {
     animate();
 }
 
+// Промокод (вводить в консоль: useCode("RELEASE") )
+function useCode(code) {
+    if(code === "RELEASE") {
+        gold += 500;
+        document.getElementById('gold').innerText = gold;
+        alert("Код активирован! +500 золота!");
+    }
+}
+
 function handleInteraction() {
     if (!controls.isLocked) return;
 
-    // Телепорт если застрял
-    if (justPressed('KeyR')) camera.position.set(0, 2.5, 3);
+    if (justPressed('KeyR')) camera.position.set(0, 2, 2);
 
-    // Логика плиты
+    // Плита
     if (interactiveObjects.stove && camera.position.distanceTo(interactiveObjects.stove.getWorldPosition(new THREE.Vector3())) < 4) {
         if (keys['KeyE'] && !handItem) {
             if (stoveProgress < 100) {
                 stoveProgress += 0.5;
                 showProgress(stoveProgress);
                 createSmoke(interactiveObjects.stove.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, 1, 0)));
-                document.getElementById('action-text').innerText = "ЖАРИМ БУРГЕР...";
+                document.getElementById('action-text').innerText = "ЖАРИМ...";
             }
         } else if (!keys['KeyE'] && stoveProgress >= 100) {
             if (justPressed('KeyE')) { takeFood('burger'); stoveProgress = 0; hideProgress(); }
         }
+    } else {
+        hideProgress();
+        document.getElementById('action-text').innerText = "";
     }
 
-    // Отдать еду клиенту
+    // Отдать еду
     customers.forEach((c, i) => {
-        if (camera.position.distanceTo(c.position) < 5 && justPressed('KeyE')) {
+        if (camera.position.distanceTo(c.position) < 4 && justPressed('KeyE')) {
             if (handItem === c.userData.want && !c.userData.isWalking) {
                 gold += 150;
                 document.getElementById('gold').innerText = gold;
@@ -99,7 +127,6 @@ function handleInteraction() {
                 scene.remove(c);
                 customers.splice(i, 1);
                 setTimeout(spawnCustomer, 3000);
-                document.getElementById('action-text').innerText = "КЛИЕНТ ДОВОЛЕН! +150💰";
             }
         }
     });
@@ -108,19 +135,13 @@ function handleInteraction() {
 function spawnCustomer() {
     loader.load('customer.glb', (gltf) => {
         const c = gltf.scene;
-        // ПОЯВЛЯЕТСЯ ДАЛЕКО (Z = -15) И ИДЕТ К ПРИЛАВКУ
-        c.position.set((Math.random()-0.5)*2, 0, -15); 
-        c.userData = { 
-            want: ['burger', 'pizza', 'cola'][Math.floor(Math.random()*3)],
-            targetZ: -2, // Остановка перед прилавком
-            isWalking: true 
-        };
+        c.position.set((Math.random()-0.5)*2, 0, -10); 
+        c.userData = { want: 'burger', targetZ: -2, isWalking: true };
         scene.add(c);
         customers.push(c);
     }, undefined, () => {
-        // Заглушка если нет модели
         const c = new THREE.Mesh(new THREE.BoxGeometry(1, 2, 1), new THREE.MeshBasicMaterial({color: 0xff00ff}));
-        c.position.set(0, 1, -15);
+        c.position.set(0, 1, -10);
         c.userData = { want: 'burger', targetZ: -2, isWalking: true };
         scene.add(c);
         customers.push(c);
@@ -131,15 +152,10 @@ function takeFood(type) {
     clearHand();
     handItem = type;
     document.getElementById('handItem').innerText = type.toUpperCase();
-    loader.load(type + '.glb', (gltf) => {
-        foodInHandModel = gltf.scene;
-        foodInHandModel.scale.set(0.3, 0.3, 0.3);
-        foodInHandModel.position.set(0.5, -0.5, -1);
-        camera.add(foodInHandModel);
-    });
+    // Тут можно добавить загрузку бургера burger.glb
 }
 
-function clearHand() { if(foodInHandModel) camera.remove(foodInHandModel); handItem = null; document.getElementById('handItem').innerText = "Ничего"; }
+function clearHand() { handItem = null; document.getElementById('handItem').innerText = "Ничего"; }
 function showProgress(v) { document.getElementById('progress-bar').style.display = 'block'; document.getElementById('progress-inner').style.width = v + '%'; }
 function hideProgress() { document.getElementById('progress-bar').style.display = 'none'; }
 function createSmoke(pos) {
@@ -157,15 +173,11 @@ function justPressed(c) { return keys[c] && !prevKeys[c]; }
 function animate() {
     requestAnimationFrame(animate);
     handleInteraction();
-
-    // ДВИЖЕНИЕ КЛИЕНТОВ К ТЕБЕ
+    
     customers.forEach((c) => {
         if (c.userData.isWalking) {
-            if (c.position.z < c.userData.targetZ) {
-                c.position.z += 0.05; // Идет вперед
-            } else {
-                c.userData.isWalking = false; // Дошел
-            }
+            if (c.position.z < c.userData.targetZ) c.position.z += 0.05;
+            else c.userData.isWalking = false;
         }
     });
 
@@ -175,11 +187,10 @@ function animate() {
     });
 
     if(controls.isLocked) {
-        let speed = 0.12;
-        if(keys['KeyW']) controls.moveForward(speed);
-        if(keys['KeyS']) controls.moveForward(-speed);
-        if(keys['KeyA']) controls.moveRight(-speed);
-        if(keys['KeyD']) controls.moveRight(speed);
+        if(keys['KeyW']) controls.moveForward(0.1);
+        if(keys['KeyS']) controls.moveForward(-0.1);
+        if(keys['KeyA']) controls.moveRight(-0.1);
+        if(keys['KeyD']) controls.moveRight(0.1);
     }
     Object.assign(prevKeys, keys);
     renderer.render(scene, camera);
