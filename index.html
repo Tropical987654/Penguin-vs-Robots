@@ -38,35 +38,35 @@ let ammo = 6, maxAmmo = 6, isReloading = false, score = 0;
 let zombies = [], keys = {};
 
 function init() {
-    // --- БЛОК СВЕТА (ЗАМЕНИ ЭТИМ) ---
+    // 1. СНАЧАЛА СОЗДАЕМ МИР (ОБЯЗАТЕЛЬНО ПЕРВЫМ!)
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0a0a);
+    scene.fog = new THREE.Fog(0x0a0a0a, 1, 60);
+
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // 2. ПОТОМ СОЗДАЕМ ИГРОКА
+    player = new THREE.Group();
+    player.position.set(0, 3, 10);
+    scene.add(player);
+    player.add(camera);
+
+    // 3. И ТОЛЬКО ТЕПЕРЬ ДОБАВЛЯЕМ СВЕТ! (Твоя ошибка была тут)
     const ambient = new THREE.AmbientLight(0xffffff, 0.8); 
-    scene.add(ambient);
+    scene.add(ambient); // Теперь scene существует, и ошибка исчезнет!
 
     const sun = new THREE.DirectionalLight(0xffffff, 1.0);
     sun.position.set(10, 20, 10);
     scene.add(sun);
 
     const flashLight = new THREE.PointLight(0xffaa00, 1.5, 30);
-    camera.add(flashLight);
-    // --- КОНЕЦ БЛОКА СВЕТА ---
-
-    // 2. Игрок
-    player = new THREE.Group();
-    player.position.set(0, 3, 10);
-    scene.add(player);
-    player.add(camera);
-
-    const light = new THREE.PointLight(0xffaa00, 1.2, 50);
-    camera.add(light);
-    scene.add(new THREE.AmbientLight(0x404040));
-
-    // 3. Окружение
-    const grid = new THREE.GridHelper(200, 40, 0xff4400, 0x222222);
-    scene.add(grid);
-
-    const floor = new THREE.Mesh(new THREE.PlaneGeometry(200,200), new THREE.MeshStandardMaterial({color: 0x050505}));
-    floor.rotation.x = -Math.PI/2;
-    scene.add(floor);
+    camera.add(flashLight); // Теперь camera существует!
+    
+    // ... дальше загрузка Бомбастика и остальное
+}
 
     // 4. ЗАГРУЗКА ТВОЕГО ДРОБАША
     const loader = new THREE.GLTFLoader();
